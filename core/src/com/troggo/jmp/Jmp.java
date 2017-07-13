@@ -1,0 +1,41 @@
+package com.troggo.jmp;
+
+import com.troggo.jmp.start.Start;
+import com.troggo.jmp.game.Game;
+
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
+public class Jmp extends com.badlogic.gdx.Game {
+
+    public enum Screen {
+        START, GAME
+    }
+
+    public SpriteBatch batch;
+    public BitmapFont font;
+
+    public void create() {
+        batch = new SpriteBatch();
+        font = new BitmapFont();    // Arial
+        setScreen(Screen.START);
+    }
+
+    public boolean setScreen(Screen screen) {
+        switch (screen) {
+            case START: super.setScreen(new Start(this)); return true;
+            case GAME: super.setScreen(new Game(this)); return true;
+            default: return false;
+        }
+    }
+
+    public void render() {
+        super.render();
+    }
+
+    public void dispose() {
+        batch.dispose();
+        font.dispose();
+    }
+}
+
