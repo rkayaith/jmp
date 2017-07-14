@@ -1,5 +1,6 @@
 package com.troggo.jmp.start;
 
+import com.badlogic.gdx.InputAdapter;
 import com.troggo.jmp.Jmp;
 
 import com.badlogic.gdx.Gdx;
@@ -10,12 +11,18 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 public class Start implements Screen {
     private final Jmp game;
 
-    private OrthographicCamera camera;
+    private OrthographicCamera camera = new OrthographicCamera();
+    private InputAdapter controller = new StartController(this);
 
     public Start(final Jmp game) {
         this.game = game;
-        camera = new OrthographicCamera();
         camera.setToOrtho(false, 480, 800);
+        game.input.addProcessor(controller);
+    }
+
+    @Override
+    public void dispose() {
+        game.input.removeProcessor(controller);
     }
 
     @Override
@@ -30,15 +37,12 @@ public class Start implements Screen {
         game.batch.begin();
         game.font.draw(game.batch, "Tap to start", 100, 150);
         game.batch.end();
-
-        if (Gdx.input.isTouched()) {
-            game.setScreen(Jmp.Screen.GAME);
-            dispose();
-        }
     }
 
-    @Override
-    public void dispose() { }
+    void startGame() {
+        game.setScreen(Jmp.Screen.GAME);
+        dispose();
+    }
 
     @Override
     public void resize(int width, int height) { }
