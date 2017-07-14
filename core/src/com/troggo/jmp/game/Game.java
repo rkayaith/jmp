@@ -46,9 +46,9 @@ public class Game implements Screen {
             touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
             camera.unproject(touchPos);
             if (touchPos.x < 240) {
-                guy.x -= 200 * Gdx.graphics.getDeltaTime();
+                guy.x -= 200 * delta;
             } else {
-                guy.x += 200 * Gdx.graphics.getDeltaTime();
+                guy.x += 200 * delta;
             }
         }
         if (guy.x < 0) guy.x = 0;
