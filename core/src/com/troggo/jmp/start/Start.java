@@ -11,8 +11,8 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 public class Start implements Screen {
     private final Jmp game;
 
-    private OrthographicCamera camera = new OrthographicCamera();
-    private InputAdapter controller = new StartController(this);
+    private final OrthographicCamera camera = new OrthographicCamera();
+    private final InputAdapter controller = new StartController(this);
 
     public Start(final Jmp game) {
         this.game = game;

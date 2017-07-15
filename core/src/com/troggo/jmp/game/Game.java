@@ -11,9 +11,9 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 public class Game implements Screen {
     private final Jmp game;
 
-    private OrthographicCamera camera;
+    private final OrthographicCamera camera;
 
-    private Guy guy;
+    private final Guy guy;
 
     public Game(final Jmp _game) {
         game = _game;
@@ -21,6 +21,7 @@ public class Game implements Screen {
         camera.setToOrtho(false, 480, 800);
 
         guy = new Guy(camera, game.batch);
+        game.input.addProcessor(guy.getController());
     }
 
     @Override
@@ -38,6 +39,7 @@ public class Game implements Screen {
     @Override
     public void dispose() {
         guy.dispose();
+        game.input.removeProcessor(guy.getController());
     }
 
     @Override

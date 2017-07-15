@@ -42,4 +42,3 @@ public class Jmp extends com.badlogic.gdx.Game {
         }
     }
 }
-
