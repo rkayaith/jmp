@@ -15,11 +15,11 @@ import com.badlogic.gdx.physics.box2d.FixtureDef
 
 private const val GUY_HEIGHT = 2f   // m
 private const val GUY_WEIGHT = 55f  // kg
-private const val GUY_DAMPING = 10f
+private const val GUY_DAMPING = 0f
 
 private const val GUY_MAX_SPEED = 12f       // m/s
 private const val GUY_MOVE_FORCE = 10000f   // N
-private const val GUY_JUMP_IMPULSE = 2300f    // Ns
+private const val GUY_JUMP_IMPULSE = 720f  // N*s
 
 private enum class Direction {
     LEFT, RIGHT, STOPPED
@@ -59,12 +59,12 @@ class Guy(private val game: Jmp) {
         when (direction) {
             Direction.LEFT -> body.applyForceToCenter(-GUY_MOVE_FORCE, 0f, true)
             Direction.RIGHT -> body.applyForceToCenter(GUY_MOVE_FORCE, 0f, true)
-            else -> {}
+            else -> body.applyLinearImpulse(-1f * body.linearVelocity.x, 0f, 0f, 0f, true)
         }
 
         // clamp Guy's horizontal velocity
-        body.linearVelocity = with(body.linearVelocity) {
-            Vector2(if (x > 0) Math.min(GUY_MAX_SPEED, x) else Math.max(-GUY_MAX_SPEED, x), y)
+        body.linearVelocity = with (body.linearVelocity) {
+            Vector2(Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED), y)
         }
 
         // TODO: keep Guy on the screen
@@ -72,6 +72,9 @@ class Guy(private val game: Jmp) {
 
     private fun jump() {
         // TODO: limit number of jumps without touching ground
+
+        // reset vertical velocity for consistent jump heights
+        body.linearVelocity =  Vector2(body.linearVelocity.x, 0f)
         body.applyLinearImpulse(0f, GUY_JUMP_IMPULSE, 0f, 0f, true)
     }
 

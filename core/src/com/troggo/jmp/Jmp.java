@@ -25,14 +25,14 @@ public class Jmp extends com.badlogic.gdx.Game {
     }
 
     private static final float WORLD_WIDTH = 20f;   // m
-    private static final float WORLD_GRAVITY = 85f; // m/s^2
+    private static final float WORLD_GRAVITY = 25f; // m/s^2
     private static final float WORLD_TIME_STEP = 1/300f;
     private static final float MAX_STEP_DELTA = 0.25f;
 
     private Box2DDebugRenderer debugRenderer;
 
     private World world;
-    private float worldDelta = 0;
+    private float worldDelta = 0;   // how far behind the world is from current time
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private BitmapFont font;
