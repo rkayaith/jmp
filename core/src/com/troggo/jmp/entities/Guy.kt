@@ -1,4 +1,4 @@
-package com.troggo.jmp.actors
+package com.troggo.jmp.entities
 
 import com.troggo.jmp.Jmp
 
@@ -28,33 +28,34 @@ private enum class Direction {
 // only one man can save us now...
 //         ...his name...?
 //                         ...Guy.
-class Guy(private val game: Jmp) {
-    val batch: Batch = game.batch
+class Guy(private val game: Jmp) : Entity {
     val controller = Controller()
-    private val texture = Texture("guy.png")
     private var direction = Direction.STOPPED
+    private var wallContacts = 0
+    private val texture = Texture("guy.png")
+    private val dimensions = Dimensions(GUY_HEIGHT * texture.width / texture.height, GUY_HEIGHT)
     private val body = game.world.createBody(
-        height = GUY_HEIGHT, width = GUY_HEIGHT * texture.width / texture.height,
+        userData = this, dimensions = dimensions,
         weight = GUY_WEIGHT, damping = GUY_DAMPING,
         x = 3f, y = game.camera.viewportHeight / 2
     )
 
-    fun dispose() {
+    override fun dispose() {
         texture.dispose()
     }
 
-    fun render() {
+    override fun render() {
         // draw Guy
-        batch.render {
+        game.batch.render {
             // TODO: maintain previous direction once stopped
             when (direction) {
-                Direction.LEFT -> draw(texture, body)
-                else -> draw(texture, body, flipX = true)
+                Direction.LEFT -> draw(texture, body, dimensions)
+                else -> draw(texture, body, dimensions, flipX = true)
             }
         }
     }
 
-    fun step() {
+    override fun step() {
         // move Guy
         when (direction) {
             Direction.LEFT -> body.applyForceToCenter(-GUY_MOVE_FORCE, 0f, true)
@@ -62,12 +63,28 @@ class Guy(private val game: Jmp) {
             else -> body.applyLinearImpulse(-1f * body.linearVelocity.x, 0f, 0f, 0f, true)
         }
 
-        // clamp Guy's horizontal velocity
+        // clamp Guy's horizontal velocity.
         body.linearVelocity = with (body.linearVelocity) {
             Vector2(Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED), y)
         }
 
-        // TODO: keep Guy on the screen
+        // slow down Guy's fall if he's holding on to a wall
+        if (wallContacts > 0) {
+            body.applyForceToCenter(0f, 0.8f * Jmp.WORLD_GRAVITY * GUY_WEIGHT, true)
+        }
+
+        // TODO: kill Guy if he leaves the screen
+    }
+
+    override fun beginContact(entity: Entity) {
+        if (entity is Wall) {
+            wallContacts++
+            body.linearVelocity = Vector2(body.linearVelocity.x, 0f)
+        }
+    }
+
+    override fun endContact(entity: Entity) {
+        if (entity is Wall) wallContacts--
     }
 
     private fun jump() {
@@ -77,6 +94,8 @@ class Guy(private val game: Jmp) {
         body.linearVelocity =  Vector2(body.linearVelocity.x, 0f)
         body.applyLinearImpulse(0f, GUY_JUMP_IMPULSE, 0f, 0f, true)
     }
+
+
 
     inner class Controller : InputAdapter() {
         override fun touchDown(x: Int, y: Int, pointer: Int, button: Int) = handler(pointer) {
@@ -108,9 +127,10 @@ class Guy(private val game: Jmp) {
 // extensions
 private data class Dimensions(val width: Float, val height: Float)
 
-private fun World.createBody(width: Float, height: Float, weight: Float = 0f,
-                             friction: Float = 0f, damping: Float = 0f,
-                             x: Float = 0f, y: Float = 0f): Body {
+private fun World.createBody(
+    dimensions: Dimensions, x: Float = 0f, y: Float = 0f, userData: Any,
+    weight: Float = 0f, friction: Float = 0f, damping: Float = 0f
+): Body {
     val bodyDef = BodyDef()
     with (bodyDef) {
         type = BodyDef.BodyType.DynamicBody
@@ -119,6 +139,7 @@ private fun World.createBody(width: Float, height: Float, weight: Float = 0f,
         fixedRotation = true
     }
 
+    val (width, height) = dimensions
     val box = PolygonShape()
     box.setAsBox(width / 2, height / 2)
 
@@ -132,19 +153,24 @@ private fun World.createBody(width: Float, height: Float, weight: Float = 0f,
     val body = createBody(bodyDef)
     with (body) {
         createFixture(fixture)
-        userData = Dimensions(width, height)
+        this.userData = userData
     }
 
     box.dispose()
     return body
 }
 
-private fun Batch.render(fn: Batch.() -> Unit) { begin(); fn(); end() }
-
-private fun Batch.draw(texture: Texture, body: Body, flipX: Boolean = false, flipY: Boolean = false) {
-    // render texture at body's position, scaled to its size
-    val (x, y) = with (body.position) { Pair(x, y) }
-    val (w, h) = body.userData as? Dimensions ?: throw IllegalArgumentException("Body userData must be Dimensions")
-    draw(texture, x - w / 2, y - h / 2, w, h, 0, 0, texture.width, texture.height, flipX, flipY)
+private fun Batch.render(fn: Batch.() -> Unit) {
+    begin()
+    fn()
+    end()
 }
 
+private fun Batch.draw(
+    texture: Texture, body: Body, dimensions: Dimensions, flipX: Boolean = false, flipY: Boolean = false
+) {
+    // render texture at body's position, scaled to its size
+    val (x, y) = with (body.position) { Pair(x, y) }
+    val (w, h) = dimensions
+    draw(texture, x - w / 2, y - h / 2, w, h, 0, 0, texture.width, texture.height, flipX, flipY)
+}

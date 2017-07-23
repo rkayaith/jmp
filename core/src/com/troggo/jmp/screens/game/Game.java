@@ -1,7 +1,7 @@
 package com.troggo.jmp.screens.game;
 
 import com.troggo.jmp.Jmp;
-import com.troggo.jmp.actors.Guy;
+import com.troggo.jmp.entities.Guy;
 import com.troggo.jmp.screens.SteppableScreen;
 
 public class Game implements SteppableScreen {
