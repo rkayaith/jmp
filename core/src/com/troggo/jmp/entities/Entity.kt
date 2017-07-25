@@ -67,13 +67,13 @@ abstract class Entity(
     }
 
     // physics world step. use this to update physics bodies and apply forces.
-    open fun step() { }
+    open fun step() = Unit
 
     // begin contact with another entity. both entities have beginContact called.
-    open fun beginContact(entity: Entity) { }
+    open fun beginContact(entity: Entity) = Unit
 
     // end contact with another entity. both entities have endContact called.
-    open fun endContact(entity: Entity) { }
+    open fun endContact(entity: Entity) = Unit
 }
 
 // extensions

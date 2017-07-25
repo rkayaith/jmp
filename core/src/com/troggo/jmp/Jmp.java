@@ -1,6 +1,7 @@
 package com.troggo.jmp;
 
 import com.troggo.jmp.entities.Entity;
+import com.troggo.jmp.entities.EntityContactListener;
 import com.troggo.jmp.entities.Wall;
 import com.troggo.jmp.screens.SteppableScreen;
 import com.troggo.jmp.screens.game.Game;
@@ -17,10 +18,6 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.Contact;
-import com.badlogic.gdx.physics.box2d.ContactImpulse;
-import com.badlogic.gdx.physics.box2d.ContactListener;
-import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
@@ -51,17 +48,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     public void create() {
         Box2D.init();
         world = new World(new Vector2(0, -WORLD_GRAVITY), true);
-        world.setContactListener(new ContactListener() {
-            @Override
-            public void beginContact(Contact contact) { onContact(contact, true); }
-            @Override
-            public void endContact(Contact contact) { onContact(contact, false); }
-            @Override
-            public void preSolve(Contact contact, Manifold manifold) { }
-            @Override
-            public void postSolve(Contact contact, ContactImpulse impulse) { }
-        });
-
+        world.setContactListener(new EntityContactListener());
         bodies = new Array<Body>();
         batch = new SpriteBatch();
 
@@ -155,20 +142,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         }
     }
 
-    private void onContact(Contact contact, boolean isBegin) {
-        Object objA = contact.getFixtureA().getBody().getUserData();
-        Object objB = contact.getFixtureB().getBody().getUserData();
 
-        if (objA instanceof Entity && objB instanceof Entity) {
-            if (isBegin) {
-                ((Entity)objA).beginContact((Entity) objB);
-                ((Entity)objB).beginContact((Entity) objA);
-            } else {
-                ((Entity)objA).endContact((Entity)objB);
-                ((Entity)objB).endContact((Entity)objA);
-            }
-        }
-    }
 
     private void createGround() {
         // TODO: use Entity
