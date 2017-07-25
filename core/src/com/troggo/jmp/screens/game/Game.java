@@ -16,14 +16,10 @@ public class Game implements SteppableScreen {
     }
 
     @Override
-    public void render(float delta) {
-        guy.render();
-    }
+    public void render(float delta) { }
 
     @Override
-    public void step(float delta) {
-        guy.step();
-    }
+    public void step(float delta) { }
 
     @Override
     public void dispose() {

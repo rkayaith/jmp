@@ -1,4 +1,13 @@
 package com.troggo.jmp.entities
 
-class Wall : Entity {
-}
+import com.badlogic.gdx.physics.box2d.BodyDef
+import com.troggo.jmp.Jmp
+
+class Wall(game: Jmp, width: Float, height: Float, x: Float) : Entity(
+    game,
+    x = x,
+    y = height / 2,
+    width = width,
+    height = height,
+    type = BodyDef.BodyType.StaticBody
+)

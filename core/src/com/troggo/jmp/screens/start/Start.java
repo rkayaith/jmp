@@ -23,9 +23,7 @@ public class Start implements SteppableScreen {
 
     @Override
     public void render(float delta) {
-        game.getBatch().begin();
         game.getFont().draw(game.getBatch(), "Tap to start", 0, 10);
-        game.getBatch().end();
     }
 
     void startGame() {

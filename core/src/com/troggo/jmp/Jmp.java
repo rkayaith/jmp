@@ -23,6 +23,7 @@ import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Array;
 
 public class Jmp extends com.badlogic.gdx.Game {
 
@@ -38,11 +39,14 @@ public class Jmp extends com.badlogic.gdx.Game {
     private Box2DDebugRenderer debugRenderer;
 
     private World world;
+    private Array<Body> bodies;
     private float worldDelta = 0;   // how far behind the world is from current time
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private BitmapFont font;
     private InputMultiplexer input;
+    private Wall wall1;
+    private Wall wall2;
 
     public void create() {
         Box2D.init();
@@ -58,6 +62,7 @@ public class Jmp extends com.badlogic.gdx.Game {
             public void postSolve(Contact contact, ContactImpulse impulse) { }
         });
 
+        bodies = new Array<Body>();
         batch = new SpriteBatch();
 
         float w = Gdx.graphics.getWidth();
@@ -75,7 +80,9 @@ public class Jmp extends com.badlogic.gdx.Game {
         debugRenderer = new Box2DDebugRenderer();
 
         createGround();
-        createWalls();
+        wall1 = new Wall(this, 1f, WORLD_WIDTH * 2, 0.5f);
+        wall2 = new Wall(this, 1f, WORLD_WIDTH * 2, WORLD_WIDTH - 0.5f);
+
         setScreen(Screen.START);
     }
 
@@ -83,6 +90,8 @@ public class Jmp extends com.badlogic.gdx.Game {
     public void dispose() {
         batch.dispose();
         font.dispose();
+        wall1.dispose();
+        wall2.dispose();
         super.dispose();
     }
 
@@ -93,7 +102,18 @@ public class Jmp extends com.badlogic.gdx.Game {
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
+        // render all entities in world
+        world.getBodies(bodies);
+        batch.begin();
+        for (Body body : bodies) {
+            Object obj = body.getUserData();
+            if (obj instanceof Entity) {
+                ((Entity)obj).render();
+            }
+        }
         super.render();
+        batch.end();
+
         debugRenderer.render(world, camera.combined);
 
         // cap max time we step so we don't overload slow devices
@@ -104,10 +124,18 @@ public class Jmp extends com.badlogic.gdx.Game {
         worldDelta += delta;
         // catch physics world up to current time
         while (worldDelta > WORLD_TIME_STEP) {
-            // we use constant time steps to keep physics consistent
+            // step all entities in world
+            world.getBodies(bodies);
+            for (Body body : bodies) {
+                Object obj = body.getUserData();
+                if (obj instanceof Entity) {
+                    ((Entity)obj).step();
+                }
+            }
             if (screen instanceof SteppableScreen) {
                 ((SteppableScreen)screen).step(WORLD_TIME_STEP);
             }
+            // we use constant time steps to keep physics consistent
             world.step(WORLD_TIME_STEP, 6, 2);
             worldDelta -= WORLD_TIME_STEP;
         }
@@ -151,28 +179,6 @@ public class Jmp extends com.badlogic.gdx.Game {
 
         Body ground = world.createBody(bodyDef);
         ground.createFixture(box, 0);
-        box.dispose();
-    }
-
-    private void createWalls() {
-        // TODO: use Entity
-        BodyDef bodyDef1 = new BodyDef();
-        bodyDef1.position.set(new Vector2(0, 0));
-
-        BodyDef bodyDef2 = new BodyDef();
-        bodyDef2.position.set(new Vector2(WORLD_WIDTH, 0));
-
-        PolygonShape box = new PolygonShape();
-        box.setAsBox(1, WORLD_WIDTH * 2);
-
-        Body wall1 = world.createBody(bodyDef1);
-        wall1.createFixture(box, 0);
-        wall1.setUserData(new Wall());
-
-        Body wall2 = world.createBody(bodyDef2);
-        wall2.createFixture(box, 0);
-        wall2.setUserData(new Wall());
-
         box.dispose();
     }
 

@@ -1,17 +1,10 @@
 package com.troggo.jmp.entities
 
-import com.troggo.jmp.Jmp
-
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
-import com.badlogic.gdx.physics.box2d.Body
-import com.badlogic.gdx.physics.box2d.BodyDef
-import com.badlogic.gdx.physics.box2d.PolygonShape
-import com.badlogic.gdx.physics.box2d.World
-import com.badlogic.gdx.physics.box2d.FixtureDef
+import com.troggo.jmp.Jmp
 
 private const val GUY_HEIGHT = 2f   // m
 private const val GUY_WEIGHT = 55f  // kg
@@ -28,35 +21,30 @@ private enum class Direction {
 // only one man can save us now...
 //         ...his name...?
 //                         ...Guy.
-class Guy(private val game: Jmp) : Entity {
+class Guy(game: Jmp) : Entity(
+    game,
+    texture = Texture("guy.png"),
+    height = GUY_HEIGHT,
+    weight = GUY_WEIGHT,
+    damping = GUY_DAMPING,
+    x = 3f,
+    y = game.camera.viewportHeight / 2
+) {
     val controller = Controller()
     private var direction = Direction.STOPPED
     private var wallContacts = 0
-    private val texture = Texture("guy.png")
-    private val dimensions = Dimensions(GUY_HEIGHT * texture.width / texture.height, GUY_HEIGHT)
-    private val body = game.world.createBody(
-        userData = this, dimensions = dimensions,
-        weight = GUY_WEIGHT, damping = GUY_DAMPING,
-        x = 3f, y = game.camera.viewportHeight / 2
-    )
 
-    override fun dispose() {
-        texture.dispose()
-    }
-
-    override fun render() {
-        // draw Guy
-        game.batch.render {
-            // TODO: maintain previous direction once stopped
-            when (direction) {
-                Direction.LEFT -> draw(texture, body, dimensions)
-                else -> draw(texture, body, dimensions, flipX = true)
-            }
+    override fun render() = with (game.batch) {
+        // TODO: maintain previous direction once stopped
+        when (direction) {
+            Direction.LEFT -> draw(this@Guy)
+            else -> draw(this@Guy, flipX = true)
         }
     }
 
     override fun step() {
         // move Guy
+        // TODO: body.gravityScale = 0.8f
         when (direction) {
             Direction.LEFT -> body.applyForceToCenter(-GUY_MOVE_FORCE, 0f, true)
             Direction.RIGHT -> body.applyForceToCenter(GUY_MOVE_FORCE, 0f, true)
@@ -91,7 +79,7 @@ class Guy(private val game: Jmp) : Entity {
         // TODO: limit number of jumps without touching ground
 
         // reset vertical velocity for consistent jump heights
-        body.linearVelocity =  Vector2(body.linearVelocity.x, 0f)
+        body.linearVelocity = Vector2(body.linearVelocity.x, 0f)
         body.applyLinearImpulse(0f, GUY_JUMP_IMPULSE, 0f, 0f, true)
     }
 
@@ -122,55 +110,4 @@ class Guy(private val game: Jmp) : Entity {
             direction = if (touch.x < cameraWidth / 2) Direction.LEFT else Direction.RIGHT
         }
     }
-}
-
-// extensions
-private data class Dimensions(val width: Float, val height: Float)
-
-private fun World.createBody(
-    dimensions: Dimensions, x: Float = 0f, y: Float = 0f, userData: Any,
-    weight: Float = 0f, friction: Float = 0f, damping: Float = 0f
-): Body {
-    val bodyDef = BodyDef()
-    with (bodyDef) {
-        type = BodyDef.BodyType.DynamicBody
-        position.set(x, y)
-        linearDamping = damping
-        fixedRotation = true
-    }
-
-    val (width, height) = dimensions
-    val box = PolygonShape()
-    box.setAsBox(width / 2, height / 2)
-
-    val fixture = FixtureDef()
-    with (fixture) {
-        shape = box
-        density = weight / (height * width)
-        this.friction = friction
-    }
-
-    val body = createBody(bodyDef)
-    with (body) {
-        createFixture(fixture)
-        this.userData = userData
-    }
-
-    box.dispose()
-    return body
-}
-
-private fun Batch.render(fn: Batch.() -> Unit) {
-    begin()
-    fn()
-    end()
-}
-
-private fun Batch.draw(
-    texture: Texture, body: Body, dimensions: Dimensions, flipX: Boolean = false, flipY: Boolean = false
-) {
-    // render texture at body's position, scaled to its size
-    val (x, y) = with (body.position) { Pair(x, y) }
-    val (w, h) = dimensions
-    draw(texture, x - w / 2, y - h / 2, w, h, 0, 0, texture.width, texture.height, flipX, flipY)
 }
