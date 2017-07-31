@@ -16,6 +16,7 @@ private const val GUY_DAMPING = 0f
 private const val GUY_MAX_SPEED = 12f       // m/s
 private const val GUY_MOVE_FORCE = 10000f   // N
 private const val GUY_JUMP_IMPULSE = 720f   // N*s
+private const val GUY_JUMP_COUNT = 2
 
 private const val WALL_GRAVITY_SCALE = 0.4f
 
@@ -38,6 +39,7 @@ class Guy(game: Jmp) : Entity(
     val controller = Controller()
     private var direction = Direction.STOPPED
     private var wallContacts = 0
+    private var jumpCount = 0
 
     override fun render() {
         // TODO: maintain previous direction once stopped
@@ -72,6 +74,9 @@ class Guy(game: Jmp) : Entity(
             updateGravity()
             body.setLinearVelocity(y = 0f)
         }
+        if (entity is Wall || entity is Ground) {
+            jumpCount = 0
+        }
     }
 
     override fun endContact(entity: Entity) {
@@ -82,14 +87,15 @@ class Guy(game: Jmp) : Entity(
     }
 
     private fun jump() {
-        // TODO: limit number of jumps without touching ground
-
-        // "move" Guy off the wall
-        wallContacts = 0
-        updateGravity()
-        // reset vertical velocity for consistent jump heights
-        body.setLinearVelocity(y = 0f)
-        body.applyLinearImpulse(y = GUY_JUMP_IMPULSE)
+        if (jumpCount < GUY_JUMP_COUNT) {
+            jumpCount++
+            // "move" Guy off the wall
+            wallContacts = 0
+            updateGravity()
+            // reset vertical velocity for consistent jump heights
+            body.setLinearVelocity(y = 0f)
+            body.applyLinearImpulse(y = GUY_JUMP_IMPULSE)
+        }
     }
 
 
