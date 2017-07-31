@@ -2,6 +2,7 @@ package com.troggo.jmp;
 
 import com.troggo.jmp.entities.Entity;
 import com.troggo.jmp.entities.EntityContactListener;
+import com.troggo.jmp.entities.Ground;
 import com.troggo.jmp.entities.Wall;
 import com.troggo.jmp.screens.SteppableScreen;
 import com.troggo.jmp.screens.game.Game;
@@ -15,10 +16,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 
@@ -42,6 +41,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private OrthographicCamera camera;
     private BitmapFont font;
     private InputMultiplexer input;
+    private Ground ground;
     private Wall wall1;
     private Wall wall2;
 
@@ -66,7 +66,7 @@ public class Jmp extends com.badlogic.gdx.Game {
 
         debugRenderer = new Box2DDebugRenderer();
 
-        createGround();
+        ground = new Ground(this, WORLD_WIDTH);
         wall1 = new Wall(this, 1f, WORLD_WIDTH * 2, 0.5f);
         wall2 = new Wall(this, 1f, WORLD_WIDTH * 2, WORLD_WIDTH - 0.5f);
 
@@ -77,6 +77,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     public void dispose() {
         batch.dispose();
         font.dispose();
+        ground.dispose();
         wall1.dispose();
         wall2.dispose();
         super.dispose();
@@ -140,20 +141,6 @@ public class Jmp extends com.badlogic.gdx.Game {
             case GAME: super.setScreen(new Game(this)); return true;
             default: return false;
         }
-    }
-
-
-
-    private void createGround() {
-        // TODO: use Entity
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.position.set(new Vector2(0, 1));
-        PolygonShape box = new PolygonShape();
-        box.setAsBox(WORLD_WIDTH, 2);
-
-        Body ground = world.createBody(bodyDef);
-        ground.createFixture(box, 0);
-        box.dispose();
     }
 
     // getters
