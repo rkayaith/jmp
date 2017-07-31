@@ -12,7 +12,9 @@ private const val GUY_DAMPING = 0f
 
 private const val GUY_MAX_SPEED = 12f       // m/s
 private const val GUY_MOVE_FORCE = 10000f   // N
-private const val GUY_JUMP_IMPULSE = 720f  // N*s
+private const val GUY_JUMP_IMPULSE = 720f   // N*s
+
+private const val WALL_GRAVITY_SCALE = 0.4f
 
 private enum class Direction {
     LEFT, RIGHT, STOPPED
@@ -44,10 +46,10 @@ class Guy(game: Jmp) : Entity(
 
     override fun step() {
         // move Guy
-        // TODO: body.gravityScale = 0.8f
         when (direction) {
             Direction.LEFT -> body.applyForceToCenter(-GUY_MOVE_FORCE, 0f, true)
             Direction.RIGHT -> body.applyForceToCenter(GUY_MOVE_FORCE, 0f, true)
+            // simulate friction
             else -> body.applyLinearImpulse(-1f * body.linearVelocity.x, 0f, 0f, 0f, true)
         }
 
@@ -56,33 +58,40 @@ class Guy(game: Jmp) : Entity(
             Vector2(Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED), y)
         }
 
-        // slow down Guy's fall if he's holding on to a wall
-        if (wallContacts > 0) {
-            body.applyForceToCenter(0f, 0.8f * Jmp.WORLD_GRAVITY * GUY_WEIGHT, true)
-        }
-
         // TODO: kill Guy if he leaves the screen
+    }
+
+    private fun updateGravity() {
+        wallContacts = Math.max(wallContacts, 0)
+        // slow down Guy's fall if he's holding on to a wall
+        body.gravityScale = if (wallContacts > 0) WALL_GRAVITY_SCALE else 1f
     }
 
     override fun beginContact(entity: Entity) {
         if (entity is Wall) {
             wallContacts++
+            updateGravity()
             body.linearVelocity = Vector2(body.linearVelocity.x, 0f)
         }
     }
 
     override fun endContact(entity: Entity) {
-        if (entity is Wall) wallContacts--
+        if (entity is Wall) {
+            wallContacts--
+            updateGravity()
+        }
     }
 
     private fun jump() {
         // TODO: limit number of jumps without touching ground
 
+        // "move" Guy off the wall
+        wallContacts = 0
+        updateGravity()
         // reset vertical velocity for consistent jump heights
         body.linearVelocity = Vector2(body.linearVelocity.x, 0f)
         body.applyLinearImpulse(0f, GUY_JUMP_IMPULSE, 0f, 0f, true)
     }
-
 
 
     inner class Controller : InputAdapter() {
