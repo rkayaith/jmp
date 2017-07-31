@@ -1,12 +1,13 @@
 package com.troggo.jmp.entities
 
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.physics.box2d.Body
 import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.FixtureDef
 import com.badlogic.gdx.physics.box2d.PolygonShape
 import com.troggo.jmp.Jmp
+import com.troggo.jmp.utils.Dimensions
+import com.troggo.jmp.utils.draw
 
 abstract class Entity(
     protected val game: Jmp,
@@ -76,12 +77,3 @@ abstract class Entity(
     open fun endContact(entity: Entity) = Unit
 }
 
-// extensions
-data class Dimensions(val width: Float, val height: Float)
-
-fun Batch.draw(entity: Entity, flipX: Boolean = false, flipY: Boolean = false) = with (entity) {
-    // render texture at body's position, scaled to its size
-    val (x, y) = with (body.position) { Pair(x, y) }
-    val (w, h) = dimensions
-    draw(texture, x - w / 2, y - h / 2, w, h, 0, 0, texture.width, texture.height, flipX, flipY)
-}

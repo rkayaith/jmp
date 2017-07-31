@@ -28,7 +28,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         START, GAME
     }
 
-    public static final float WORLD_GRAVITY = 25f;          // m/s^2
+    private static final float WORLD_GRAVITY = 25f;         // m/s^2
     private static final float WORLD_WIDTH = 20f;           // m
     private static final float WORLD_TIME_STEP = 1/300f;    // s
     private static final float MAX_STEP_DELTA = 0.25f;      // s

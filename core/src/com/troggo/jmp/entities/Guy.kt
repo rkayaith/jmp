@@ -2,9 +2,12 @@ package com.troggo.jmp.entities
 
 import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.troggo.jmp.Jmp
+import com.troggo.jmp.utils.applyForceToCenter
+import com.troggo.jmp.utils.applyLinearImpulse
+import com.troggo.jmp.utils.draw
+import com.troggo.jmp.utils.setLinearVelocity
 
 private const val GUY_HEIGHT = 2f   // m
 private const val GUY_WEIGHT = 55f  // kg
@@ -36,27 +39,23 @@ class Guy(game: Jmp) : Entity(
     private var direction = Direction.STOPPED
     private var wallContacts = 0
 
-    override fun render() = with (game.batch) {
+    override fun render() {
         // TODO: maintain previous direction once stopped
-        when (direction) {
-            Direction.LEFT -> draw(this@Guy)
-            else -> draw(this@Guy, flipX = true)
-        }
+        game.batch.draw(this, flipX = (direction == Direction.RIGHT))
     }
 
     override fun step() {
         // move Guy
         when (direction) {
-            Direction.LEFT -> body.applyForceToCenter(-GUY_MOVE_FORCE, 0f, true)
-            Direction.RIGHT -> body.applyForceToCenter(GUY_MOVE_FORCE, 0f, true)
+            Direction.LEFT -> body.applyForceToCenter(x = -GUY_MOVE_FORCE)
+            Direction.RIGHT -> body.applyForceToCenter(x = GUY_MOVE_FORCE)
             // simulate friction
-            else -> body.applyLinearImpulse(-1f * body.linearVelocity.x, 0f, 0f, 0f, true)
+            else -> body.applyLinearImpulse(x = -1f * body.linearVelocity.x)
         }
 
         // clamp Guy's horizontal velocity.
-        body.linearVelocity = with (body.linearVelocity) {
-            Vector2(Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED), y)
-        }
+        val x = body.linearVelocity.x
+        body.setLinearVelocity(x = Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED))
 
         // TODO: kill Guy if he leaves the screen
     }
@@ -71,7 +70,7 @@ class Guy(game: Jmp) : Entity(
         if (entity is Wall) {
             wallContacts++
             updateGravity()
-            body.linearVelocity = Vector2(body.linearVelocity.x, 0f)
+            body.setLinearVelocity(y = 0f)
         }
     }
 
@@ -89,8 +88,8 @@ class Guy(game: Jmp) : Entity(
         wallContacts = 0
         updateGravity()
         // reset vertical velocity for consistent jump heights
-        body.linearVelocity = Vector2(body.linearVelocity.x, 0f)
-        body.applyLinearImpulse(0f, GUY_JUMP_IMPULSE, 0f, 0f, true)
+        body.setLinearVelocity(y = 0f)
+        body.applyLinearImpulse(y = GUY_JUMP_IMPULSE)
     }
 
 
