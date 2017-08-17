@@ -1,26 +1,41 @@
 package com.troggo.jmp.entities
 
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.physics.box2d.Body
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.FixtureDef
 import com.badlogic.gdx.physics.box2d.PolygonShape
 import com.troggo.jmp.Jmp
 import com.troggo.jmp.utils.Dimensions
 import com.troggo.jmp.utils.draw
+import com.badlogic.gdx.physics.box2d.Body as Box2DBody
 
-abstract class Entity(
+interface Entity {
+    // begin contact with another entity. both entities have beginContact called.
+    fun beginContact(entity: Entity) = Unit
+    // end contact with another entity. both entities have endContact called.
+    fun endContact(entity: Entity) = Unit
+    // frame is being rendered. use this to draw textures.
+    fun render() = Unit
+    // physics world step. use this to update physics bodies and apply forces.
+    fun step() = Unit
+}
+
+abstract class Body(
     protected val game: Jmp,
     val texture: Texture = Texture("missing_texture.png"),
+
+    type: BodyDef.BodyType = BodyDef.BodyType.DynamicBody,
+    x: Float = 0f,
+    y: Float = 0f,
+    damping: Float = 0f,
+
+    // fixture attributes
     width: Float? = null,
     height: Float? = null,
     weight: Float = 0f,
-    friction: Float = 0f,
-    damping: Float = 0f,
-    type: BodyDef.BodyType = BodyDef.BodyType.DynamicBody,
-    x: Float = 0f,
-    y: Float = 0f
-) {
+    friction: Float = 0f
+) : Entity {
 
     // maintain texture aspect ratio if only one of width or height is given
     val dimensions = (texture.width.toFloat() / texture.height).let { ar -> Dimensions(
@@ -28,52 +43,54 @@ abstract class Entity(
         height = height ?: width?.div(ar) ?: texture.height.toFloat()
     )}
 
-    val body: Body
+    val body: Box2DBody = game.world.createBody(BodyDef().also {
+        it.type = type
+        it.position.set(x, y)
+        it.linearDamping = damping
+        it.fixedRotation = true
+    })
 
     init {
-        val bodyDef = BodyDef().apply {
-            this.type = type
-            position.set(x, y)
-            linearDamping = damping
-            fixedRotation = true
-        }
-
-        val box = PolygonShape().apply {
-            setAsBox(dimensions.width / 2, dimensions.height / 2)
-        }
-
-        val fixture = FixtureDef().apply {
-            shape = box
-            density = weight / (dimensions.height * dimensions.width)
-            this.friction = friction
-        }
-
-        body = game.world.createBody(bodyDef).apply {
-            createFixture(fixture)
-            userData = this@Entity
-        }
-
-        box.dispose()
+        Fixture(dimensions.width, dimensions.height, weight, friction, isBody = true)
     }
 
-    // entity is being disposed. use this to dispose textures and other assets.
-    open fun dispose() {
+    // body is being disposed. use this to dispose textures and other assets.
+    fun dispose() {
         texture.dispose()
         game.world.destroyBody(body)
     }
 
-    // frame is being rendered. use this to draw textures.
-    open fun render() {
-        game.batch.draw(this@Entity)
+    override fun render() {
+        game.batch.draw(this)
     }
 
-    // physics world step. use this to update physics bodies and apply forces.
-    open fun step() = Unit
+    open inner class Fixture(
+        width: Float,
+        height: Float,
+        weight: Float = 0f,
+        friction: Float = 0f,
+        isSensor: Boolean = false,
+        offsetX: Float = 0f,
+        offsetY: Float = 0f,
+        isBody: Boolean = false
+    ) : Entity {
+        init {
+            val box = PolygonShape().apply {
+                setAsBox(width / 2, height / 2, Vector2(offsetX, offsetY), 0f)
+            }
 
-    // begin contact with another entity. both entities have beginContact called.
-    open fun beginContact(entity: Entity) = Unit
+            val fixture = FixtureDef().also {
+                it.shape = box
+                it.density = weight / (dimensions.height * dimensions.width)
+                it.friction = friction
+                it.isSensor = isSensor
+            }
 
-    // end contact with another entity. both entities have endContact called.
-    open fun endContact(entity: Entity) = Unit
+            body.createFixture(fixture).also {
+                it.userData = if (isBody) this@Body else this
+            }
+
+            box.dispose()
+        }
+    }
 }
-

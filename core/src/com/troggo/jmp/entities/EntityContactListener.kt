@@ -12,8 +12,8 @@ class EntityContactListener : ContactListener {
     override fun postSolve(contact: Contact, impulse: ContactImpulse) = Unit
 
     private fun onContact(contact: Contact, begin: Boolean) {
-        val objA = contact.fixtureA.body.userData
-        val objB = contact.fixtureB.body.userData
+        val objA = contact.fixtureA.userData
+        val objB = contact.fixtureB.userData
 
         if (objA is Entity && objB is Entity) {
             if (begin) {

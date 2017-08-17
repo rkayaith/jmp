@@ -27,7 +27,7 @@ private enum class Direction {
 // only one man can save us now...
 //         ...his name...?
 //                         ...Guy.
-class Guy(game: Jmp) : Entity(
+class Guy(game: Jmp) : Body(
     game,
     texture = Texture("guy.png"),
     height = GUY_HEIGHT,
@@ -37,6 +37,9 @@ class Guy(game: Jmp) : Entity(
     y = game.camera.viewportHeight / 2
 ) {
     val controller = Controller()
+    val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 2) {}
+    val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 2) {}
+    val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 2) {}
     private var direction = Direction.STOPPED
     private var wallContacts = 0
     private var jumpCount = 0
@@ -98,6 +101,21 @@ class Guy(game: Jmp) : Entity(
         }
     }
 
+    inner class Sensor(
+        x: Float = 0f,
+        y: Float = 0f,
+        width: Float = 0.2f,
+        height: Float = 0.2f,
+        val onContact: (Entity) -> Unit
+    ) : Fixture(
+        isSensor = true,
+        width = width,
+        height = height,
+        offsetX = x,
+        offsetY = y
+    ) {
+        override fun beginContact(entity: Entity) = onContact(entity)
+    }
 
     inner class Controller : InputAdapter() {
         override fun touchDown(x: Int, y: Int, pointer: Int, button: Int) = handler(pointer) {
