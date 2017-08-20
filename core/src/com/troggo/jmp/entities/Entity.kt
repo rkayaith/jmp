@@ -29,12 +29,14 @@ abstract class Body(
     x: Float = 0f,
     y: Float = 0f,
     damping: Float = 0f,
+    gravityScale: Float = 1f,
 
     // fixture attributes
     width: Float? = null,
     height: Float? = null,
     weight: Float = 0f,
-    friction: Float = 0f
+    friction: Float = 0f,
+    isSensor: Boolean = false
 ) : Entity {
 
     // maintain texture aspect ratio if only one of width or height is given
@@ -47,15 +49,16 @@ abstract class Body(
         it.type = type
         it.position.set(x, y)
         it.linearDamping = damping
+        it.gravityScale = gravityScale
         it.fixedRotation = true
     })
 
     init {
-        Fixture(dimensions.width, dimensions.height, weight, friction, isBody = true)
+        Fixture(dimensions.width, dimensions.height, weight, friction, isSensor, isBody = true)
     }
 
     // body is being disposed. use this to dispose textures and other assets.
-    fun dispose() {
+    open fun dispose() {
         texture.dispose()
         game.world.destroyBody(body)
     }

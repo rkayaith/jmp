@@ -37,9 +37,10 @@ class Guy(game: Jmp) : Body(
     y = game.camera.viewportHeight / 2
 ) {
     val controller = Controller()
-    val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 2) {}
-    val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 2) {}
-    val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 2) {}
+    private val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 2)
+    private val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 2)
+    private val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 2)
+
     private var direction = Direction.STOPPED
     private var wallContacts = 0
     private var jumpCount = 0
@@ -71,19 +72,25 @@ class Guy(game: Jmp) : Body(
         body.gravityScale = if (wallContacts > 0) WALL_GRAVITY_SCALE else 1f
     }
 
-    override fun beginContact(entity: Entity) {
-        if (entity is Wall) {
-            wallContacts++
-            updateGravity()
-            body.setLinearVelocity(y = 0f)
-        }
-        if (entity is Wall || entity is Ground) {
-            jumpCount = 0
+
+    private fun sensorBeginContact(sensor: Sensor, entity: Entity) {
+        when (sensor) {
+            foot -> {
+                jumpCount = 0
+            }
+            left, right -> {
+                if (entity is Box) {
+                    wallContacts++
+                    updateGravity()
+                    body.setLinearVelocity(y = 0f)
+                    jumpCount = 0
+                }
+            }
         }
     }
 
-    override fun endContact(entity: Entity) {
-        if (entity is Wall) {
+    private fun sensorEndContact(sensor: Sensor, entity: Entity) {
+        if (entity is Box) {
             wallContacts--
             updateGravity()
         }
@@ -105,8 +112,7 @@ class Guy(game: Jmp) : Body(
         x: Float = 0f,
         y: Float = 0f,
         width: Float = 0.2f,
-        height: Float = 0.2f,
-        val onContact: (Entity) -> Unit
+        height: Float = 0.2f
     ) : Fixture(
         isSensor = true,
         width = width,
@@ -114,7 +120,16 @@ class Guy(game: Jmp) : Body(
         offsetX = x,
         offsetY = y
     ) {
-        override fun beginContact(entity: Entity) = onContact(entity)
+        var contacts = 0
+        fun inContact() = contacts > 0
+        override fun beginContact(entity: Entity) {
+            contacts++
+            sensorBeginContact(this, entity)
+        }
+        override fun endContact(entity: Entity) {
+            contacts--
+            sensorEndContact(this, entity)
+        }
     }
 
     inner class Controller : InputAdapter() {

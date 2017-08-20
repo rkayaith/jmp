@@ -68,8 +68,8 @@ public class Jmp extends com.badlogic.gdx.Game {
         debugRenderer = new Box2DDebugRenderer();
 
         ground = new Ground(this, WORLD_WIDTH);
-        wall1 = new Wall(this, 1f, WORLD_WIDTH * 2, 0.5f);
-        wall2 = new Wall(this, 1f, WORLD_WIDTH * 2, WORLD_WIDTH - 0.5f);
+        wall1 = new Wall(this, 0.01f, WORLD_WIDTH * 2, 0f);
+        wall2 = new Wall(this, 0.01f, WORLD_WIDTH * 2, WORLD_WIDTH);
 
         setScreen(Screen.START);
     }
