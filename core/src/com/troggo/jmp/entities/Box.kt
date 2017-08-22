@@ -2,6 +2,7 @@ package com.troggo.jmp.entities
 
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.BodyDef
+import com.badlogic.gdx.physics.box2d.Shape
 import com.badlogic.gdx.physics.box2d.joints.WeldJointDef
 import com.troggo.jmp.Jmp
 import com.troggo.jmp.utils.setLinearVelocity
@@ -21,6 +22,7 @@ class Box(
     width = width,
     height = BOX_HEIGHT,
     gravityScale = 0f,
+    shapeType = Shape.Type.Chain,
     type = BodyDef.BodyType.KinematicBody
 ) {
     private val collision = Collision().also {

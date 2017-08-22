@@ -13,12 +13,13 @@ private const val GUY_HEIGHT = 2f   // m
 private const val GUY_WEIGHT = 55f  // kg
 private const val GUY_DAMPING = 0f
 
-private const val GUY_MAX_SPEED = 12f       // m/s
-private const val GUY_MOVE_FORCE = 10000f   // N
-private const val GUY_JUMP_IMPULSE = 720f   // N*s
+private const val GUY_MAX_SPEED = 12f           // m/s
+private const val GUY_MOVE_FORCE = 6000f        // N
+private const val GUY_JUMP_IMPULSE_UP = 720f    // N*s
+private const val GUY_JUMP_IMPULSE_SIDE = 1000f // N*s
 private const val GUY_JUMP_COUNT = 2
 
-private const val WALL_GRAVITY_SCALE = 0.4f
+private const val WALL_FRICTION_FORCE = 700f    // N
 
 private enum class Direction {
     LEFT, RIGHT, STOPPED
@@ -38,8 +39,8 @@ class Guy(game: Jmp) : Body(
 ) {
     val controller = Controller()
     private val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 2)
-    private val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 2)
-    private val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 2)
+    private val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
+    private val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
 
     private var direction = Direction.STOPPED
     private var wallContacts = 0
@@ -63,15 +64,13 @@ class Guy(game: Jmp) : Body(
         val x = body.linearVelocity.x
         body.setLinearVelocity(x = Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED))
 
+        // give Guy friction against walls
+        if (wallContacts > 0) {
+            body.applyForceToCenter(y = -WALL_FRICTION_FORCE * Math.signum(body.linearVelocity.y))
+        }
+
         // TODO: kill Guy if he leaves the screen
     }
-
-    private fun updateGravity() {
-        wallContacts = Math.max(wallContacts, 0)
-        // slow down Guy's fall if he's holding on to a wall
-        body.gravityScale = if (wallContacts > 0) WALL_GRAVITY_SCALE else 1f
-    }
-
 
     private fun sensorBeginContact(sensor: Sensor, entity: Entity) {
         when (sensor) {
@@ -81,8 +80,6 @@ class Guy(game: Jmp) : Body(
             left, right -> {
                 if (entity is Box) {
                     wallContacts++
-                    updateGravity()
-                    body.setLinearVelocity(y = 0f)
                     jumpCount = 0
                 }
             }
@@ -90,21 +87,24 @@ class Guy(game: Jmp) : Body(
     }
 
     private fun sensorEndContact(sensor: Sensor, entity: Entity) {
-        if (entity is Box) {
-            wallContacts--
-            updateGravity()
+        when (sensor) {
+            left, right -> {
+                if (entity is Box) {
+                    wallContacts--
+                }
+            }
         }
     }
 
     private fun jump() {
         if (jumpCount < GUY_JUMP_COUNT) {
             jumpCount++
-            // "move" Guy off the wall
-            wallContacts = 0
-            updateGravity()
+            // push Guy off the wall
+            if (left.inContact()) body.applyLinearImpulse(x = GUY_JUMP_IMPULSE_SIDE)
+            if (right.inContact()) body.applyLinearImpulse(x = -GUY_JUMP_IMPULSE_SIDE)
             // reset vertical velocity for consistent jump heights
             body.setLinearVelocity(y = 0f)
-            body.applyLinearImpulse(y = GUY_JUMP_IMPULSE)
+            body.applyLinearImpulse(y = GUY_JUMP_IMPULSE_UP)
         }
     }
 

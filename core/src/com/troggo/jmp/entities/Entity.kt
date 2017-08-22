@@ -3,8 +3,10 @@ package com.troggo.jmp.entities
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.BodyDef
+import com.badlogic.gdx.physics.box2d.ChainShape
 import com.badlogic.gdx.physics.box2d.FixtureDef
 import com.badlogic.gdx.physics.box2d.PolygonShape
+import com.badlogic.gdx.physics.box2d.Shape
 import com.troggo.jmp.Jmp
 import com.troggo.jmp.utils.Dimensions
 import com.troggo.jmp.utils.draw
@@ -36,7 +38,8 @@ abstract class Body(
     height: Float? = null,
     weight: Float = 0f,
     friction: Float = 0f,
-    isSensor: Boolean = false
+    isSensor: Boolean = false,
+    shapeType: Shape.Type = Shape.Type.Polygon
 ) : Entity {
 
     // maintain texture aspect ratio if only one of width or height is given
@@ -54,7 +57,7 @@ abstract class Body(
     })
 
     init {
-        Fixture(dimensions.width, dimensions.height, weight, friction, isSensor, isBody = true)
+        Fixture(dimensions.width, dimensions.height, weight, friction, isSensor, shapeType, isBody = true)
     }
 
     // body is being disposed. use this to dispose textures and other assets.
@@ -73,17 +76,29 @@ abstract class Body(
         weight: Float = 0f,
         friction: Float = 0f,
         isSensor: Boolean = false,
+        shapeType: Shape.Type = Shape.Type.Polygon,
         offsetX: Float = 0f,
         offsetY: Float = 0f,
         isBody: Boolean = false
     ) : Entity {
         init {
-            val box = PolygonShape().apply {
-                setAsBox(width / 2, height / 2, Vector2(offsetX, offsetY), 0f)
+            val shape = when (shapeType) {
+                Shape.Type.Polygon -> PolygonShape().apply {
+                    setAsBox(width / 2, height / 2, Vector2(offsetX, offsetY), 0f)
+                }
+                Shape.Type.Chain -> ChainShape().apply {
+                    createLoop(arrayOf(
+                        Vector2(offsetX + width / 2, offsetY + height / 2),
+                        Vector2(offsetX - width / 2, offsetY + height / 2),
+                        Vector2(offsetX - width / 2, offsetY - height / 2),
+                        Vector2(offsetX + width / 2, offsetY - height / 2)
+                    ))
+                }
+                else -> throw IllegalArgumentException("Shape type not implemented.")
             }
 
             val fixture = FixtureDef().also {
-                it.shape = box
+                it.shape = shape
                 it.density = weight / (dimensions.height * dimensions.width)
                 it.friction = friction
                 it.isSensor = isSensor
@@ -93,7 +108,7 @@ abstract class Body(
                 it.userData = if (isBody) this@Body else this
             }
 
-            box.dispose()
+            shape.dispose()
         }
     }
 }
