@@ -48,13 +48,16 @@ abstract class Body(
         height = height ?: width?.div(ar) ?: texture.height.toFloat()
     )}
 
-    val body: Box2DBody = game.world.createBody(BodyDef().also {
+    protected val body: Box2DBody = game.world.createBody(BodyDef().also {
         it.type = type
         it.position.set(x, y)
         it.linearDamping = damping
         it.gravityScale = gravityScale
         it.fixedRotation = true
     })
+
+    val position: Vector2
+        get() = body.position
 
     init {
         Fixture(dimensions.width, dimensions.height, weight, friction, isSensor, shapeType, isBody = true)

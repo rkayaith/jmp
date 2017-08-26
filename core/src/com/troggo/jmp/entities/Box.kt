@@ -8,7 +8,7 @@ import com.troggo.jmp.Jmp
 import com.troggo.jmp.utils.setLinearVelocity
 
 const val BOX_HEIGHT = 4f               // m/s
-private const val BOX_FALL_SPEED = 5f   // m/s
+const val BOX_FALL_SPEED = 5f           // m/s
 
 class Box(
     game: Jmp,
@@ -25,13 +25,7 @@ class Box(
     shapeType = Shape.Type.Chain,
     type = BodyDef.BodyType.KinematicBody
 ) {
-    private val collision = Collision().also {
-        // weld collision 'hitbox' to self
-        game.world.createJoint(WeldJointDef().apply {
-            initialize(body, it.body, Vector2())
-        })
-    }
-
+    private val collision = Collision()
     init {
         body.setLinearVelocity(y = -BOX_FALL_SPEED)
     }
@@ -56,6 +50,12 @@ class Box(
         height = BOX_HEIGHT,
         isSensor = true
     ) {
+        init {
+            // weld collision 'hitbox' to Box
+            game.world.createJoint(WeldJointDef().apply {
+                initialize(this@Box.body, body, Vector2())
+            })
+        }
         override fun render() = Unit
         override fun beginContact(entity: Entity) = this@Box.beginContact(entity)
     }
