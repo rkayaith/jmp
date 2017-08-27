@@ -56,8 +56,9 @@ abstract class Body(
         it.fixedRotation = true
     })
 
-    val position: Vector2
+    var position: Vector2
         get() = body.position
+        set(vec) = body.setTransform(vec, body.angle)
 
     init {
         Fixture(dimensions.width, dimensions.height, weight, friction, isSensor, shapeType, isBody = true)

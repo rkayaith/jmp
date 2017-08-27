@@ -32,6 +32,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private static final float WORLD_GRAVITY = 25f;         // m/s^2
     private static final float WORLD_TIME_STEP = 1/300f;    // s
     private static final float MAX_STEP_DELTA = 0.25f;      // s
+    private static final float WALL_OFFSET = 0.25f;         // m
 
     private Box2DDebugRenderer debugRenderer;
 
@@ -68,8 +69,8 @@ public class Jmp extends com.badlogic.gdx.Game {
         debugRenderer = new Box2DDebugRenderer();
 
         ground = new Ground(this, WORLD_WIDTH);
-        wall1 = new Wall(this, 0.01f, WORLD_WIDTH * 2, 0f);
-        wall2 = new Wall(this, 0.01f, WORLD_WIDTH * 2, WORLD_WIDTH);
+        wall1 = new Wall(this, -WALL_OFFSET);
+        wall2 = new Wall(this, WORLD_WIDTH + WALL_OFFSET);
 
         setScreen(Screen.START);
     }
