@@ -86,14 +86,18 @@ public class Jmp extends com.badlogic.gdx.Game {
 
     @Override
     public void render() {
+        // cap max time we step so we don't overload slow devices
+        step(Math.min(Gdx.graphics.getRawDeltaTime(), MAX_STEP_DELTA));
+
         Gdx.gl.glClearColor(1, 1, 1, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
-        // render all entities in world
         world.getBodies(bodies);
         batch.begin();
+        super.render();
+        // render all entities in world
         for (Body body : bodies) {
             for (Fixture fixture : body.getFixtureList()) {
                 Object obj = fixture.getUserData();
@@ -102,19 +106,18 @@ public class Jmp extends com.badlogic.gdx.Game {
                 }
             }
         }
-        super.render();
         batch.end();
 
         debugRenderer.render(world, camera.combined);
-
-        // cap max time we step so we don't overload slow devices
-        step(Math.min(Gdx.graphics.getRawDeltaTime(), MAX_STEP_DELTA));
     }
 
     private void step(float delta) {
         worldDelta += delta;
         // catch physics world up to current time
         while (worldDelta > WORLD_TIME_STEP) {
+            if (screen instanceof SteppableScreen) {
+                ((SteppableScreen)screen).step(WORLD_TIME_STEP);
+            }
             // step all entities in world
             world.getBodies(bodies);
             for (Body body : bodies) {
@@ -125,9 +128,7 @@ public class Jmp extends com.badlogic.gdx.Game {
                     }
                 }
             }
-            if (screen instanceof SteppableScreen) {
-                ((SteppableScreen)screen).step(WORLD_TIME_STEP);
-            }
+
             // we use constant time steps to keep physics consistent
             world.step(WORLD_TIME_STEP, 6, 2);
             worldDelta -= WORLD_TIME_STEP;
@@ -146,6 +147,17 @@ public class Jmp extends com.badlogic.gdx.Game {
             case GAME: super.setScreen(new Game(this)); return true;
             default: return false;
         }
+    }
+
+    public void gameOver(float score) {
+        if (screen != null) {
+            screen.dispose();
+        }
+        screen = null;
+        camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+        setScreen(Screen.START);
+        // TODO: save score if its player's high score
+        // TODO: show game over screen
     }
 
     // getters

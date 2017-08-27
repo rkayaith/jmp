@@ -5,12 +5,12 @@ import com.troggo.jmp.entities.Box;
 import com.troggo.jmp.entities.Guy;
 import com.troggo.jmp.screens.SteppableScreen;
 
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.Array;
 
 import static com.troggo.jmp.Jmp.WORLD_WIDTH;
 import static com.troggo.jmp.entities.BoxKt.BOX_FALL_SPEED;
 import static com.troggo.jmp.entities.BoxKt.BOX_HEIGHT;
+import static com.troggo.jmp.utils.CameraKt.getTop;
 
 public class Game implements SteppableScreen {
 
@@ -21,6 +21,7 @@ public class Game implements SteppableScreen {
     private final Guy guy;
     private final Array<Box> boxes = new Array<Box>();
 
+    private float guyMaxY = 0;
     private float boxSpawnDelta = 0;
     private float boxSpawnY = 0;
 
@@ -28,7 +29,7 @@ public class Game implements SteppableScreen {
         game = _game;
         guy = new Guy(game);
         game.getInput().addProcessor(guy.getController());
-        spawnBox(screenTop());
+        spawnBox(getTop(game.getCamera()));
     }
 
     @Override
@@ -47,28 +48,23 @@ public class Game implements SteppableScreen {
         if (guyY > camY) {
             game.getCamera().translate(0, guyY - camY);
         }
-        if (guyY < screenBottom()) {
-            game.getCamera().translate(0, guyY - screenBottom());
-        }
     }
 
     @Override
     public void step(float delta) {
+        // end game if Guy is dead
+        guyMaxY = Math.max(guyMaxY, guy.getPosition().y);
+        if (guy.isDead()) {
+            game.gameOver(guyMaxY);
+            return;
+        }
+
+        // spawn box
         boxSpawnDelta += delta;
         float boxY = boxSpawnY - boxSpawnDelta * BOX_FALL_SPEED;
-        if (screenTop() >= boxY + BOX_SPAWN_DISTANCE) {
+        if (getTop(game.getCamera()) >= boxY + BOX_SPAWN_DISTANCE) {
             spawnBox(boxY + BOX_SPAWN_DISTANCE);
         }
-    }
-
-    private float screenTop() {
-        OrthographicCamera camera = game.getCamera();
-        return camera.position.y + camera.viewportHeight / 2;
-    }
-
-    private float screenBottom() {
-        OrthographicCamera camera = game.getCamera();
-        return camera.position.y - camera.viewportHeight / 2;
     }
 
     private void spawnBox(float y) {

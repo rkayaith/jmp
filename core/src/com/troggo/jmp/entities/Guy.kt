@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector3
 import com.troggo.jmp.Jmp
 import com.troggo.jmp.utils.applyForceToCenter
 import com.troggo.jmp.utils.applyLinearImpulse
+import com.troggo.jmp.utils.bottom
 import com.troggo.jmp.utils.draw
 import com.troggo.jmp.utils.setLinearVelocity
 
@@ -38,13 +39,16 @@ class Guy(game: Jmp) : Body(
     y = game.camera.viewportHeight / 2
 ) {
     val controller = Controller()
-    private val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 2)
+    private var dead = false
+    private val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 1.2f)
+    private val head = Sensor(y = GUY_HEIGHT / 2, width = dimensions.width / 1.2f)
     private val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
     private val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
 
     private var direction = Direction.STOPPED
-    private var wallContacts = 0
     private var jumpCount = 0
+
+    fun isDead() = dead
 
     override fun render() {
         // TODO: maintain previous direction once stopped
@@ -65,43 +69,39 @@ class Guy(game: Jmp) : Body(
         body.setLinearVelocity(x = Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED))
 
         // give Guy friction against walls
-        if (wallContacts > 0) {
+        if (left.isInContact || right.isInContact) {
             body.applyForceToCenter(y = -WALL_FRICTION_FORCE * Math.signum(body.linearVelocity.y))
         }
 
-        // TODO: kill Guy if he leaves the screen
+        // kill Guy if he leaves the screen
+        dead = position.y < game.camera.bottom
     }
 
     private fun sensorBeginContact(sensor: Sensor, entity: Entity) {
         when (sensor) {
             foot -> {
                 jumpCount = 0
+                dead = head.isInContact
+            }
+            head -> {
+                dead = foot.isInContact
             }
             left, right -> {
                 if (entity is Box) {
-                    wallContacts++
                     jumpCount = 0
                 }
             }
         }
     }
 
-    private fun sensorEndContact(sensor: Sensor, entity: Entity) {
-        when (sensor) {
-            left, right -> {
-                if (entity is Box) {
-                    wallContacts--
-                }
-            }
-        }
-    }
+    private fun sensorEndContact(sensor: Sensor, entity: Entity) = Unit
 
     private fun jump() {
         if (jumpCount < GUY_JUMP_COUNT) {
             jumpCount++
             // push Guy off the wall
-            if (left.inContact()) body.applyLinearImpulse(x = GUY_JUMP_IMPULSE_SIDE)
-            if (right.inContact()) body.applyLinearImpulse(x = -GUY_JUMP_IMPULSE_SIDE)
+            if (left.isInContact) body.applyLinearImpulse(x = GUY_JUMP_IMPULSE_SIDE)
+            if (right.isInContact) body.applyLinearImpulse(x = -GUY_JUMP_IMPULSE_SIDE)
             // reset vertical velocity for consistent jump heights
             body.setLinearVelocity(y = 0f)
             body.applyLinearImpulse(y = GUY_JUMP_IMPULSE_UP)
@@ -121,12 +121,16 @@ class Guy(game: Jmp) : Body(
         offsetY = y
     ) {
         var contacts = 0
-        fun inContact() = contacts > 0
-        override fun beginContact(entity: Entity) {
+        val isInContact get() = contacts > 0
+        private fun filter(entity: Entity, fn: () -> Unit) {
+            // we only handle contacts with certain entities
+            if (entity is Box || entity is Ground) fn()
+        }
+        override fun beginContact(entity: Entity) = filter(entity) {
             contacts++
             sensorBeginContact(this, entity)
         }
-        override fun endContact(entity: Entity) {
+        override fun endContact(entity: Entity) = filter(entity) {
             contacts--
             sensorEndContact(this, entity)
         }
