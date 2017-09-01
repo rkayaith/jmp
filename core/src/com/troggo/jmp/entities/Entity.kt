@@ -56,7 +56,7 @@ abstract class Body(
         it.fixedRotation = true
     })
 
-    var position: Vector2
+    open var position: Vector2
         get() = body.position
         set(vec) = body.setTransform(vec, body.angle)
 

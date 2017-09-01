@@ -5,6 +5,9 @@ import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.Shape
 import com.badlogic.gdx.physics.box2d.joints.WeldJointDef
 import com.troggo.jmp.Jmp
+import com.troggo.jmp.utils.Pool
+import com.troggo.jmp.utils.Poolable
+import com.troggo.jmp.utils.bottom
 import com.troggo.jmp.utils.setLinearVelocity
 
 const val BOX_HEIGHT = 4f               // m/s
@@ -12,10 +15,11 @@ const val BOX_FALL_SPEED = 5f           // m/s
 
 class Box(
     game: Jmp,
-    private val width: Float,
-    private val x: Float,
-    private val y: Float
-) : Body (
+    private val pool: Pool<Box>,
+    x: Float,
+    y: Float,
+    width: Float
+) : Poolable, Body(
     game,
     x = x,
     y = y,
@@ -25,14 +29,36 @@ class Box(
     shapeType = Shape.Type.Chain,
     type = BodyDef.BodyType.KinematicBody
 ) {
-    private val collision = Collision()
-    init {
+    private var dead = false
+    private val collision = Collision(x, y, width)
+    override var position
+        get() = super.position
+        set(vec) {
+            super.position = vec
+            collision.position = vec
+        }
+    init { reset() }
+
+    override fun reset() {
+        dead = false
         body.setLinearVelocity(y = -BOX_FALL_SPEED)
     }
 
     override fun dispose() {
         collision.dispose()
         super.dispose()
+    }
+
+    override fun step() {
+        if (!dead) {
+            // stop boxes from falling near the edge of the screen
+            if (position.y <= game.camera.bottom) body.setLinearVelocity(y = 0f)
+            // clean up off screen boxes
+            if (position.y < game.camera.bottom - BOX_HEIGHT) {
+                dead = true
+                pool.free(this)
+            }
+        }
     }
 
     override fun beginContact(entity: Entity) {
@@ -42,7 +68,7 @@ class Box(
     }
 
     // we need a separate body to detect collisions for the box since kinematic bodies can't collide with other bodies
-    inner class Collision : Body (
+    inner class Collision(x: Float, y: Float, width: Float) : Body (
         game,
         x = x,
         y = y,

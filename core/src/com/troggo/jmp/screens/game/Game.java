@@ -4,8 +4,13 @@ import com.troggo.jmp.Jmp;
 import com.troggo.jmp.entities.Box;
 import com.troggo.jmp.entities.Guy;
 import com.troggo.jmp.screens.SteppableScreen;
+import com.troggo.jmp.utils.Pool;
 
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.math.Vector2;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 import static com.troggo.jmp.Jmp.WORLD_WIDTH;
 import static com.troggo.jmp.entities.BoxKt.BOX_FALL_SPEED;
@@ -19,7 +24,21 @@ public class Game implements SteppableScreen {
     private final Jmp game;
 
     private final Guy guy;
-    private final Array<Box> boxes = new Array<Box>();
+    private final Pool<Box> squareBoxes = new Pool<Box>() {
+        @NotNull
+        @Override
+        protected Box create(@NotNull Pool<Box> pool) {
+            return new Box(game, pool, 0, 0, BOX_HEIGHT);
+        }
+    };
+
+    private final Pool<Box> rectBoxes = new Pool<Box>() {
+        @NotNull
+        @Override
+        protected Box create(@NotNull Pool<Box> pool) {
+            return new Box(game, pool, 0, 0, BOX_HEIGHT / 2);
+        }
+    };
 
     private float guyMaxY = 0;
     private float boxSpawnDelta = 0;
@@ -36,6 +55,8 @@ public class Game implements SteppableScreen {
     public void dispose() {
         guy.dispose();
         game.getInput().removeProcessor(guy.getController());
+        List<Box> boxes = squareBoxes.empty();
+        boxes.addAll(rectBoxes.empty());
         for (Box box : boxes) {
             box.dispose();
         }
@@ -69,26 +90,18 @@ public class Game implements SteppableScreen {
 
     private void spawnBox(float y) {
         // make some boxes square and some half width rectangles
-        float width = Math.random() > 0.6 ? BOX_HEIGHT : BOX_HEIGHT / 2;
+        Box box = Math.random() > 0.6 ? squareBoxes.obtain() : rectBoxes.obtain();
+        float width = box.getDimensions().getWidth();
         float leftLim = width / 2;
         float rightLim = WORLD_WIDTH - width / 2;
         float x = (float)Math.random() * (rightLim - leftLim) + leftLim;
         // align x position nicely
         x = leftLim + Math.round((x - leftLim) / (BOX_HEIGHT / 2)) * BOX_HEIGHT / 2;
-        // limit number of boxes
-        // TODO: clean up off screen boxes instead
-        if (boxes.size >= 30) {
-            for (Box box : boxes) {
-                box.dispose();
-            }
-            boxes.clear();
-        }
 
-        boxes.add(new Box(game, width, x, y + BOX_HEIGHT)); // create box off the screen
+        box.setPosition(new Vector2(x, y + BOX_HEIGHT));    // create box off the screen
         boxSpawnY = y;
         boxSpawnDelta = 0;
     }
-
 
     @Override
     public void resize(int width, int height) { }
