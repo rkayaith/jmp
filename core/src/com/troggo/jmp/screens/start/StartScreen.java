@@ -6,12 +6,12 @@ import com.troggo.jmp.screens.SteppableScreen;
 
 import com.badlogic.gdx.InputAdapter;
 
-public class Start implements SteppableScreen {
+public class StartScreen implements SteppableScreen {
     private final Jmp game;
 
-    private final InputAdapter controller = new StartController(this);
+    private final InputAdapter controller = new StartScreenController(this);
 
-    public Start(final Jmp _game) {
+    public StartScreen(final Jmp _game) {
         game = _game;
         game.getInput().addProcessor(controller);
     }

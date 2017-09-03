@@ -17,7 +17,7 @@ import static com.troggo.jmp.entities.BoxKt.BOX_FALL_SPEED;
 import static com.troggo.jmp.entities.BoxKt.BOX_HEIGHT;
 import static com.troggo.jmp.utils.CameraKt.getTop;
 
-public class Game implements SteppableScreen {
+public class GameScreen implements SteppableScreen {
 
     private static final float BOX_SPAWN_DISTANCE = 8;  // m
 
@@ -44,7 +44,7 @@ public class Game implements SteppableScreen {
     private float boxSpawnDelta = 0;
     private float boxSpawnY = 0;
 
-    public Game(final Jmp _game) {
+    public GameScreen(final Jmp _game) {
         game = _game;
         guy = new Guy(game);
         game.getInput().addProcessor(guy.getController());

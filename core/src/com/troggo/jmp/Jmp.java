@@ -5,8 +5,8 @@ import com.troggo.jmp.entities.EntityContactListener;
 import com.troggo.jmp.entities.Ground;
 import com.troggo.jmp.entities.Wall;
 import com.troggo.jmp.screens.SteppableScreen;
-import com.troggo.jmp.screens.game.Game;
-import com.troggo.jmp.screens.start.Start;
+import com.troggo.jmp.screens.game.GameScreen;
+import com.troggo.jmp.screens.start.StartScreen;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
@@ -142,11 +142,11 @@ public class Jmp extends com.badlogic.gdx.Game {
         super.resize(width, height);
     }
 
-    public boolean setScreen(Screen screen) {
+    public void setScreen(Screen screen) {
         switch (screen) {
-            case START: super.setScreen(new Start(this)); return true;
-            case GAME: super.setScreen(new Game(this)); return true;
-            default: return false;
+            case START: super.setScreen(new StartScreen(this)); return;
+            case GAME: super.setScreen(new GameScreen(this)); return;
+            default: throw new IllegalArgumentException("Invalid screen");
         }
     }
 

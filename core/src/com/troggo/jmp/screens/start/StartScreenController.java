@@ -2,11 +2,11 @@ package com.troggo.jmp.screens.start;
 
 import com.badlogic.gdx.InputAdapter;
 
-class StartController extends InputAdapter {
+class StartScreenController extends InputAdapter {
 
-    private final Start screen;
+    private final StartScreen screen;
 
-    StartController(Start _screen) {
+    StartScreenController(StartScreen _screen) {
         screen = _screen;
     }
 
