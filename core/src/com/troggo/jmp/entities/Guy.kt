@@ -22,7 +22,7 @@ private const val GUY_JUMP_COUNT = 2
 
 private const val WALL_FRICTION_FORCE = 700f    // N
 
-private enum class Direction {
+enum class Direction {
     LEFT, RIGHT, STOPPED
 }
 
@@ -51,13 +51,21 @@ class Guy(game: Jmp, y: Float) : Body(
     fun isDead() = dead
 
     override fun render() {
-        // TODO: maintain previous direction once stopped
+        body.linearVelocity.x.let { vX ->
+            direction = when {
+                right.isInContact -> Direction.RIGHT
+                left.isInContact -> Direction.LEFT
+                vX > 0 -> Direction.RIGHT
+                vX < 0 -> Direction.LEFT
+                else -> direction
+            }
+        }
         game.batch.draw(this, flipX = (direction == Direction.RIGHT))
     }
 
     override fun step() {
         // move Guy
-        when (direction) {
+        when (controller.direction) {
             Direction.LEFT -> body.applyForceToCenter(x = -GUY_MOVE_FORCE)
             Direction.RIGHT -> body.applyForceToCenter(x = GUY_MOVE_FORCE)
             // simulate friction
@@ -137,6 +145,7 @@ class Guy(game: Jmp, y: Float) : Body(
     }
 
     inner class Controller : InputAdapter() {
+        var direction = Direction.STOPPED
         override fun touchDown(x: Int, y: Int, pointer: Int, button: Int) = handler(pointer) {
             jump()
             updateDirection(x)
