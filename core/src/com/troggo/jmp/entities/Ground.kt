@@ -6,7 +6,7 @@ import com.troggo.jmp.Jmp
 class Ground(game: Jmp, width: Float) : Body (
     game,
     width = width,
-    height = 2f,
+    height = game.camera.viewportHeight,
     x = width / 2,
     type = BodyDef.BodyType.StaticBody
 )

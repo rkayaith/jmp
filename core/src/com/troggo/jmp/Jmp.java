@@ -166,6 +166,10 @@ public class Jmp extends com.badlogic.gdx.Game {
         return world;
     }
 
+    public Ground getGround() {
+        return ground;
+    }
+
     public OrthographicCamera getCamera() {
         return camera;
     }

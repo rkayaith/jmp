@@ -10,7 +10,7 @@ import com.troggo.jmp.utils.bottom
 import com.troggo.jmp.utils.draw
 import com.troggo.jmp.utils.setLinearVelocity
 
-private const val GUY_HEIGHT = 2f   // m
+public  const val GUY_HEIGHT = 2f   // m
 private const val GUY_WEIGHT = 55f  // kg
 private const val GUY_DAMPING = 0f
 
@@ -29,14 +29,14 @@ private enum class Direction {
 // only one man can save us now...
 //         ...his name...?
 //                         ...Guy.
-class Guy(game: Jmp) : Body(
+class Guy(game: Jmp, y: Float) : Body(
     game,
     texture = Texture("guy.png"),
     height = GUY_HEIGHT,
     weight = GUY_WEIGHT,
     damping = GUY_DAMPING,
-    x = 3f,
-    y = game.camera.viewportHeight / 2
+    x = game.camera.viewportWidth / 2,
+    y = y
 ) {
     val controller = Controller()
     private var dead = false

@@ -52,7 +52,7 @@ class Box(
     override fun step() {
         if (!dead) {
             // stop boxes from falling near the edge of the screen
-            if (position.y <= game.camera.bottom) body.setLinearVelocity(y = 0f)
+            if (position.y <= game.camera.bottom + BOX_HEIGHT / 2) body.setLinearVelocity(y = 0f)
             // clean up off screen boxes
             if (position.y < game.camera.bottom - BOX_HEIGHT) {
                 dead = true
@@ -86,6 +86,3 @@ class Box(
         override fun beginContact(entity: Entity) = this@Box.beginContact(entity)
     }
 }
-
-
-
