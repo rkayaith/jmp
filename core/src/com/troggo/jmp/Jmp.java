@@ -36,13 +36,14 @@ public class Jmp extends com.badlogic.gdx.Game {
     private static final float WORLD_TIME_STEP = 1/300f;    // s
     private static final float MAX_STEP_DELTA = 0.25f;      // s
     private static final float WALL_OFFSET = 0.25f;         // m
-    private static final float FONT_CAMERA_WIDTH = 200;     // px
+    private static final float FONT_CAMERA_WIDTH = 400;     // px
 
     private Box2DDebugRenderer debugRenderer;
 
     private World world;
     private Array<Body> bodies;
     private float worldDelta = 0;   // how far behind the world is from current time
+    private float highScore = 0;    // TODO: get high score from storage
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private OrthographicCamera fontCamera;
@@ -67,18 +68,8 @@ public class Jmp extends com.badlogic.gdx.Game {
         fontCamera = new OrthographicCamera();
         fontCamera.setToOrtho(false, FONT_CAMERA_WIDTH, FONT_CAMERA_WIDTH * h / w);
 
-        FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Gdx.files.internal("04B_30__.TTF"));
-        FreeTypeFontParameter param = new FreeTypeFontParameter();
-        param.color = Color.BLACK;
-        param.mono = true;
-        param.kerning = false;
-
-        param.size = 16;
-        fontH1 = gen.generateFont(param);
-        param.size = 8;
-        fontH2 = gen.generateFont(param);
-
-        gen.dispose();
+        fontH1 = generateFont("04B_30__.TTF", 32);
+        fontH2 = generateFont("VCR_OSD_MONO_1.001.ttf", 21);
 
         input = new InputMultiplexer();
         Gdx.input.setInputProcessor(input);
@@ -136,9 +127,6 @@ public class Jmp extends com.badlogic.gdx.Game {
         worldDelta += delta;
         // catch physics world up to current time
         while (worldDelta > WORLD_TIME_STEP) {
-            // we use constant time steps to keep physics consistent
-            world.step(WORLD_TIME_STEP, 6, 2);
-            worldDelta -= WORLD_TIME_STEP;
 
             // step all entities in world
             world.getBodies(bodies);
@@ -154,6 +142,11 @@ public class Jmp extends com.badlogic.gdx.Game {
             if (screen instanceof SteppableScreen) {
                 ((SteppableScreen)screen).step(WORLD_TIME_STEP);
             }
+
+            // we use constant time steps to keep physics consistent
+            world.step(WORLD_TIME_STEP, 6, 2);
+            worldDelta -= WORLD_TIME_STEP;
+
         }
     }
 
@@ -166,7 +159,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     public void setScreen(Screen screen) {
         switch (screen) {
             case START: super.setScreen(new StartScreen(this)); return;
-            case GAME: super.setScreen(new GameScreen(this)); return;
+            case GAME: super.setScreen(new GameScreen(this, highScore)); return;
             default: throw new IllegalArgumentException("Invalid screen");
         }
     }
@@ -178,6 +171,9 @@ public class Jmp extends com.badlogic.gdx.Game {
         screen = null;
         camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
         setScreen(Screen.START);
+        if (score > highScore) {
+            highScore = score;
+        }
         // TODO: save score if its player's high score
         // TODO: show game over screen
     }
@@ -190,6 +186,18 @@ public class Jmp extends com.badlogic.gdx.Game {
         batch.setProjectionMatrix(fontCamera.combined);
         font.draw(batch, str, x, y, FONT_CAMERA_WIDTH, align, true);
         batch.setProjectionMatrix(camera.combined);
+    }
+
+    private BitmapFont generateFont(String file, int size) {
+        FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Gdx.files.internal(file));
+        FreeTypeFontParameter param = new FreeTypeFontParameter();
+        param.color = Color.BLACK;
+        param.mono = true;
+        param.kerning = false;
+        param.size = size;
+        BitmapFont font = gen.generateFont(param);
+        gen.dispose();
+        return font;
     }
 
     // getters

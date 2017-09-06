@@ -9,6 +9,7 @@ import com.troggo.jmp.utils.Pool;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Align;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +31,7 @@ public class GameScreen implements SteppableScreen {
     private static final float CAM_MAX_SPEED_HEIGHT = 100;  // m
 
     private final Jmp game;
+    private final float highScore;
 
     private final Guy guy;
     private final Pool<Box> squareBoxes = new Pool<Box>() {
@@ -53,8 +55,9 @@ public class GameScreen implements SteppableScreen {
     private float boxSpawnDelta = 0;
     private float boxSpawnY = 0;
 
-    public GameScreen(final Jmp _game) {
+    public GameScreen(final Jmp _game, float _highScore) {
         game = _game;
+        highScore = _highScore;
         Ground ground = game.getGround();
         groundLevel = ground.getPosition().y + ground.getDimensions().getHeight() / 2 + GUY_HEIGHT / 2;
         guy = new Guy(game, groundLevel);
@@ -81,6 +84,11 @@ public class GameScreen implements SteppableScreen {
         if (guyY > camY) {
             game.getCamera().translate(0, guyY - camY);
         }
+
+        String scores =
+            "HIGH SCORE: " + (int)highScore + "m\n" +
+            "SCORE:      " + (int)guyMaxY + "m";
+        game.write(game.getFontH2(), scores, 0, cam.viewportHeight - 0.1f, Align.left);
     }
 
     @Override
