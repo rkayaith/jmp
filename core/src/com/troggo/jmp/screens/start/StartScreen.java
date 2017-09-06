@@ -5,6 +5,7 @@ import com.troggo.jmp.Jmp.Screen;
 import com.troggo.jmp.screens.SteppableScreen;
 
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.utils.Align;
 
 public class StartScreen implements SteppableScreen {
     private final Jmp game;
@@ -23,7 +24,7 @@ public class StartScreen implements SteppableScreen {
 
     @Override
     public void render(float delta) {
-        game.getFont().draw(game.getBatch(), "Tap to start", 0, 10);
+        game.write(game.getFontH1(), "Tap To Start", 0, game.getCamera().viewportHeight / 1.8f, Align.center);
     }
 
     void startGame() {
