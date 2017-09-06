@@ -39,7 +39,9 @@ class Guy(game: Jmp, y: Float) : Body(
     y = y
 ) {
     val controller = Controller()
-    private var dead = false
+    var isDead = false
+        set(dead) { field = dead || field } // no rising from the dead
+
     private val foot = Sensor(y = -GUY_HEIGHT / 2, width = dimensions.width / 1.2f)
     private val head = Sensor(y = GUY_HEIGHT / 2, width = dimensions.width / 1.2f)
     private val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
@@ -47,8 +49,6 @@ class Guy(game: Jmp, y: Float) : Body(
 
     private var direction = Direction.STOPPED
     private var jumpCount = 0
-
-    fun isDead() = dead
 
     override fun render() {
         body.linearVelocity.x.let { vX ->
@@ -82,17 +82,17 @@ class Guy(game: Jmp, y: Float) : Body(
         }
 
         // kill Guy if he leaves the screen
-        dead = position.y < game.camera.bottom
+        isDead = position.y < game.camera.bottom
     }
 
     private fun sensorBeginContact(sensor: Sensor, entity: Entity) {
         when (sensor) {
             foot -> {
                 jumpCount = 0
-                dead = head.isInContact
+                isDead = head.isInContact
             }
             head -> {
-                dead = foot.isInContact
+                isDead = foot.isInContact
             }
             left, right -> {
                 if (entity is Box) {
