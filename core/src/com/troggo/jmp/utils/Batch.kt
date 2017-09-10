@@ -1,11 +1,19 @@
 package com.troggo.jmp.utils
 
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
-import com.troggo.jmp.entities.Body
+import com.badlogic.gdx.math.Vector2
 
-fun Batch.draw(body: Body, flipX: Boolean = false, flipY: Boolean = false) = with (body) {
-    // render texture at body's position, scaled to its size
+fun Batch.draw(sprite: Sprite, position: Vector2, dimensions: Dimensions, flipX: Boolean = false, flipY: Boolean = false) {
+    val (texture, sw, sh, sx, sy) = sprite
     val (x, y) = position
     val (w, h) = dimensions
-    draw(texture, x - w / 2, y - h / 2, w, h, 0, 0, texture.width, texture.height, flipX, flipY)
+    draw(texture, x - w / 2, y - h / 2, w, h, sx, sy, sw, sh, flipX, flipY)
+}
+
+fun Batch.withAlpha(alpha: Float, fn: Batch.() -> Unit) {
+    val c = color
+    color = Color(c).apply { a = alpha}
+    fn()
+    color = c
 }

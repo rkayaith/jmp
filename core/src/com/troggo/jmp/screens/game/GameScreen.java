@@ -38,7 +38,7 @@ public class GameScreen implements SteppableScreen {
         @NotNull
         @Override
         protected Box create(@NotNull Pool<Box> pool) {
-            return new Box(game, pool, 0, 0, BOX_HEIGHT);
+            return new Box(game, pool, true, 0, 0);
         }
     };
 
@@ -46,7 +46,7 @@ public class GameScreen implements SteppableScreen {
         @NotNull
         @Override
         protected Box create(@NotNull Pool<Box> pool) {
-            return new Box(game, pool, 0, 0, BOX_HEIGHT / 2);
+            return new Box(game, pool, false, 0, 0);
         }
     };
 

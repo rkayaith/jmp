@@ -37,6 +37,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private static final float MAX_STEP_DELTA = 0.25f;      // s
     private static final float WALL_OFFSET = 0.25f;         // m
     private static final float FONT_CAMERA_WIDTH = 400;     // px
+    private static final Color BG_COLOR = new Color(0x1c3333ff);
 
     private Box2DDebugRenderer debugRenderer;
 
@@ -96,10 +97,11 @@ public class Jmp extends com.badlogic.gdx.Game {
 
     @Override
     public void render() {
+        float delta = Gdx.graphics.getRawDeltaTime();
         // cap max time we step so we don't overload slow devices
-        step(Math.min(Gdx.graphics.getRawDeltaTime(), MAX_STEP_DELTA));
+        step(Math.min(delta, MAX_STEP_DELTA));
 
-        Gdx.gl.glClearColor(1, 1, 1, 1);
+        Gdx.gl.glClearColor(BG_COLOR.r, BG_COLOR.g, BG_COLOR.b, BG_COLOR.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
         fontCamera.update();
@@ -113,14 +115,14 @@ public class Jmp extends com.badlogic.gdx.Game {
             for (Fixture fixture : body.getFixtureList()) {
                 Object obj = fixture.getUserData();
                 if (obj instanceof Entity) {
-                    ((Entity)obj).render();
+                    ((Entity)obj).render(delta);
                 }
             }
         }
         super.render();
         batch.end();
-
-        debugRenderer.render(world, camera.combined);
+        // draw box2D bodies
+        // debugRenderer.render(world, camera.combined);
     }
 
     private void step(float delta) {
@@ -191,7 +193,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private BitmapFont generateFont(String file, int size) {
         FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Gdx.files.internal(file));
         FreeTypeFontParameter param = new FreeTypeFontParameter();
-        param.color = Color.BLACK;
+        param.color = Color.WHITE;
         param.mono = true;
         param.kerning = false;
         param.size = size;
@@ -201,6 +203,10 @@ public class Jmp extends com.badlogic.gdx.Game {
     }
 
     // getters
+    public float getPixelWidth() {
+        return WORLD_WIDTH / Gdx.graphics.getWidth();
+    }
+
     public World getWorld() {
         return world;
     }

@@ -1,14 +1,10 @@
 package com.troggo.jmp.entities
 
 import com.badlogic.gdx.InputAdapter
-import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.troggo.jmp.Jmp
-import com.troggo.jmp.utils.applyForceToCenter
-import com.troggo.jmp.utils.applyLinearImpulse
-import com.troggo.jmp.utils.bottom
-import com.troggo.jmp.utils.draw
-import com.troggo.jmp.utils.setLinearVelocity
+import com.troggo.jmp.utils.*
 
 public  const val GUY_HEIGHT = 2f   // m
 private const val GUY_WEIGHT = 55f  // kg
@@ -18,9 +14,29 @@ private const val GUY_MAX_SPEED = 12f           // m/s
 private const val GUY_MOVE_FORCE = 6000f        // N
 private const val GUY_JUMP_IMPULSE_UP = 720f    // N*s
 private const val GUY_JUMP_IMPULSE_SIDE = 1000f // N*s
-private const val GUY_JUMP_COUNT = 2
+private const val GUY_JUMP_COUNT = 2            // jumps
+private const val GUY_WALK_ANIM_DIST = 2f       // m
+private const val GUY_TRAIL_LENGTH = 3
+private const val GUY_TRAIL_ALPHA = 0.3f
+private const val GUY_TRAIL_INTERVAL = 0.1f     // s
 
 private const val WALL_FRICTION_FORCE = 700f    // N
+
+private const val SPRITESHEET_ROWS = 2
+private const val SPRITESHEET_COLS = 7
+
+private enum class GUY_SPRITE(private val frame: Int? = null) {
+    STAND,
+    HANG,
+    JUMP,
+    AIR_ACCEL,
+    FALL,
+    DEAD,
+    DEAD2,
+    WALK_START,
+    WALK_END(GUY_SPRITE.WALK_START() + 3);
+    operator fun invoke() = frame ?: ordinal
+}
 
 enum class Direction {
     LEFT, RIGHT, STOPPED
@@ -31,7 +47,7 @@ enum class Direction {
 //                         ...Guy.
 class Guy(game: Jmp, y: Float) : Body(
     game,
-    texture = Texture("guy.png"),
+    sprites = SpriteSheet("guy.png", SPRITESHEET_ROWS, SPRITESHEET_COLS),
     height = GUY_HEIGHT,
     weight = GUY_WEIGHT,
     damping = GUY_DAMPING,
@@ -47,20 +63,52 @@ class Guy(game: Jmp, y: Float) : Body(
     private val left = Sensor(x = -dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
     private val right = Sensor(x = dimensions.width / 2, height = GUY_HEIGHT / 1.2f)
 
-    private var direction = Direction.STOPPED
     private var jumpCount = 0
 
-    override fun render() {
-        body.linearVelocity.x.let { vX ->
+    private var direction = Direction.RIGHT
+    private val walk = sprites.Animation(GUY_SPRITE.WALK_START()..GUY_SPRITE.WALK_END(), GUY_WALK_ANIM_DIST)
+    private val trail = CappedArrayList<Triple<Int, Vector2, Direction>>(GUY_TRAIL_LENGTH)
+    private var trailDelta = GUY_TRAIL_INTERVAL
+
+    override fun render(delta: Float) {
+        body.linearVelocity.let { v ->
             direction = when {
                 right.isInContact -> Direction.RIGHT
                 left.isInContact -> Direction.LEFT
-                vX > 0 -> Direction.RIGHT
-                vX < 0 -> Direction.LEFT
+                v.x > 0 -> Direction.RIGHT
+                v.x < 0 -> Direction.LEFT
                 else -> direction
             }
+            val frame = when {
+                // dead
+                isDead -> GUY_SPRITE.DEAD()
+                // sides touching a box
+                right.isInContact || left.isInContact -> GUY_SPRITE.HANG()
+                // in the air
+                !foot.isInContact -> when {
+                    v.y < 0 -> GUY_SPRITE.FALL()
+                    v.x.abs < GUY_MAX_SPEED && controller.direction != Direction.STOPPED -> GUY_SPRITE.AIR_ACCEL()
+                    else -> GUY_SPRITE.JUMP()
+                }
+                // on the ground
+                v.x.abs < 0.1f -> { walk.reset(); GUY_SPRITE.STAND() }
+                else -> walk.apply { step(delta * v.x.abs) }.frame
+            }
+
+            // draw trail
+            trail.reversed().forEachIndexed { i, (frame, position, direction) ->
+                game.batch.withAlpha(GUY_TRAIL_ALPHA - i * GUY_TRAIL_ALPHA / GUY_TRAIL_LENGTH) {
+                    draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+                }
+            }
+            trailDelta += delta
+            if (trailDelta >= GUY_TRAIL_INTERVAL)  {
+                trail.add(Triple(frame, position.copy(), direction))
+                trailDelta -= GUY_TRAIL_INTERVAL
+            }
+
+            game.batch.draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
         }
-        game.batch.draw(this, flipX = (direction == Direction.RIGHT))
     }
 
     override fun step() {
@@ -74,7 +122,7 @@ class Guy(game: Jmp, y: Float) : Body(
 
         // clamp Guy's horizontal velocity.
         val x = body.linearVelocity.x
-        body.setLinearVelocity(x = Math.signum(x) * Math.min(Math.abs(x), GUY_MAX_SPEED))
+        body.setLinearVelocity(x = Math.signum(x) * Math.min(x.abs, GUY_MAX_SPEED))
 
         // give Guy friction against walls
         if (left.isInContact || right.isInContact) {
@@ -86,19 +134,17 @@ class Guy(game: Jmp, y: Float) : Body(
     }
 
     private fun sensorBeginContact(sensor: Sensor, entity: Entity) {
+        val landOn = { e: Entity ->
+            jumpCount = 0
+            (e as? Box)?.touch()
+        }
         when (sensor) {
             foot -> {
-                jumpCount = 0
                 isDead = head.isInContact
+                landOn(entity)
             }
-            head -> {
-                isDead = foot.isInContact
-            }
-            left, right -> {
-                if (entity is Box) {
-                    jumpCount = 0
-                }
-            }
+            head -> isDead = foot.isInContact
+            left, right -> if (entity is Box) landOn(entity)
         }
     }
 
