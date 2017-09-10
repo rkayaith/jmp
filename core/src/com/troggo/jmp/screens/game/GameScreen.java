@@ -29,6 +29,7 @@ public class GameScreen implements SteppableScreen {
     private static final float CAM_MIN_SPEED = 1.0f;        // m/s
     private static final float CAM_MAX_SPEED = 5.0f;        // m/s
     private static final float CAM_MAX_SPEED_HEIGHT = 100;  // m
+    private static final float GAME_OVER_SUSPEND_TIME = 1f; // s
 
     private final Jmp game;
     private final float highScore;
@@ -89,14 +90,23 @@ public class GameScreen implements SteppableScreen {
             "HIGH SCORE: " + (int)highScore + "m\n" +
             "SCORE:      " + (int)guyMaxY + "m";
         game.write(game.getFontH2(), scores, 0, cam.viewportHeight - 0.1f, Align.left);
+        if (guy.isDead()) {
+            game.write(game.getFontH1(), "RIP", 0, cam.viewportHeight / 2, Align.center);
+        }
     }
 
     @Override
     public void step(float delta) {
-        // end game if Guy is dead
         guyMaxY = Math.max(guyMaxY, guy.getPosition().y - groundLevel);
+
+        // end game if Guy is dead
         if (guy.isDead()) {
-            game.gameOver(guyMaxY);
+            game.suspend(GAME_OVER_SUSPEND_TIME, new Runnable() {
+                @Override
+                public void run() {
+                    game.gameOver(guyMaxY);
+                }
+            });
             return;
         }
 

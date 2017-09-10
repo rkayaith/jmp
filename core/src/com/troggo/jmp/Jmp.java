@@ -42,8 +42,10 @@ public class Jmp extends com.badlogic.gdx.Game {
     private Box2DDebugRenderer debugRenderer;
 
     private World world;
-    private Array<Body> bodies;
+    private Array<Body> bodies = new Array<Body>();
     private float worldDelta = 0;   // how far behind the world is from current time
+    private float suspendDelta = 0; // how long to suspend the game for
+    private Runnable suspendCb = null;
     private float highScore = 0;    // TODO: get high score from storage
     private SpriteBatch batch;
     private OrthographicCamera camera;
@@ -59,7 +61,6 @@ public class Jmp extends com.badlogic.gdx.Game {
         Box2D.init();
         world = new World(new Vector2(0, -WORLD_GRAVITY), true);
         world.setContactListener(new EntityContactListener());
-        bodies = new Array<Body>();
         batch = new SpriteBatch();
 
         float w = Gdx.graphics.getWidth();
@@ -100,7 +101,10 @@ public class Jmp extends com.badlogic.gdx.Game {
         float delta = Gdx.graphics.getRawDeltaTime();
         // cap max time we step so we don't overload slow devices
         step(Math.min(delta, MAX_STEP_DELTA));
+        render(delta, false);
+    }
 
+    private void render(float delta, boolean debug) {
         Gdx.gl.glClearColor(BG_COLOR.r, BG_COLOR.g, BG_COLOR.b, BG_COLOR.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
@@ -115,40 +119,58 @@ public class Jmp extends com.badlogic.gdx.Game {
             for (Fixture fixture : body.getFixtureList()) {
                 Object obj = fixture.getUserData();
                 if (obj instanceof Entity) {
-                    ((Entity)obj).render(delta);
+                    ((Entity) obj).render(delta);
                 }
             }
         }
         super.render();
         batch.end();
-        // draw box2D bodies
-        // debugRenderer.render(world, camera.combined);
+
+        if (debug) {
+            // draw box2D bodies
+            debugRenderer.render(world, camera.combined);
+        }
     }
 
     private void step(float delta) {
         worldDelta += delta;
         // catch physics world up to current time
         while (worldDelta > WORLD_TIME_STEP) {
-
-            // step all entities in world
-            world.getBodies(bodies);
-            for (Body body : bodies) {
-                for (Fixture fixture : body.getFixtureList()) {
-                    Object obj = fixture.getUserData();
-                    if (obj instanceof Entity) {
-                        ((Entity)obj).step();
-                    }
-                }
-            }
-
-            if (screen instanceof SteppableScreen) {
-                ((SteppableScreen)screen).step(WORLD_TIME_STEP);
-            }
-
-            // we use constant time steps to keep physics consistent
-            world.step(WORLD_TIME_STEP, 6, 2);
             worldDelta -= WORLD_TIME_STEP;
 
+            if (suspendDelta > 0) {
+                wait(WORLD_TIME_STEP);
+            } else {
+                // step all entities in world
+                world.getBodies(bodies);
+                for (Body body : bodies) {
+                    for (Fixture fixture : body.getFixtureList()) {
+                        Object obj = fixture.getUserData();
+                        if (obj instanceof Entity) {
+                            ((Entity) obj).step(WORLD_TIME_STEP);
+                        }
+                    }
+                }
+
+                if (screen instanceof SteppableScreen) {
+                    ((SteppableScreen) screen).step(WORLD_TIME_STEP);
+                }
+
+                // we use constant time steps to keep physics consistent
+                world.step(WORLD_TIME_STEP, 6, 2);
+            }
+        }
+    }
+
+    private void wait(float delta) {
+        if (suspendDelta > delta) {
+            suspendDelta -= delta;
+        } else if (suspendDelta > 0) {
+            suspendDelta = 0;
+            if (suspendCb != null) {
+                suspendCb.run();
+                suspendCb = null;
+            }
         }
     }
 
@@ -164,6 +186,16 @@ public class Jmp extends com.badlogic.gdx.Game {
             case GAME: super.setScreen(new GameScreen(this, highScore)); return;
             default: throw new IllegalArgumentException("Invalid screen");
         }
+    }
+
+    public void suspend(float t, Runnable func) {
+        // stop world from updating for t seconds
+        // renders will still occur
+        suspendDelta = t;
+        if (suspendCb != null) {
+            throw new IllegalStateException("Multiple concurrent suspends not implemented.");
+        }
+        suspendCb = func;
     }
 
     public void gameOver(float score) {

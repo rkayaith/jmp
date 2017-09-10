@@ -15,7 +15,7 @@ class Wall(game: Jmp, x: Float) : Body(
     type = BodyDef.BodyType.StaticBody
 ) {
     override fun render(delta: Float) = Unit
-    override fun step() {
+    override fun step(delta: Float) {
         val cam = game.camera
         val pos = position
         if (pos.y > cam.top || pos.y < cam.bottom) {

@@ -20,7 +20,7 @@ interface Entity {
     // frame is being rendered. use this to draw textures.
     fun render(delta: Float) = Unit
     // physics world step. use this to update physics bodies and apply forces.
-    fun step() = Unit
+    fun step(delta: Float) = Unit
 }
 
 abstract class Body(

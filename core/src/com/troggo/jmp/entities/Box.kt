@@ -71,7 +71,7 @@ class Box(
         game.batch.draw(sprites[frame], position, dimensions)
     }
 
-    override fun step() {
+    override fun step(delta: Float) {
         if (!dead) {
             // stop boxes from falling near the edge of the screen
             if (position.y <= game.camera.bottom + BOX_HEIGHT / 2) body.setLinearVelocity(y = 0f)

@@ -22,8 +22,8 @@ private const val GUY_TRAIL_INTERVAL = 0.1f     // s
 
 private const val WALL_FRICTION_FORCE = 700f    // N
 
-private const val SPRITESHEET_ROWS = 2
-private const val SPRITESHEET_COLS = 7
+private const val SPRITESHEET_ROWS = 3
+private const val SPRITESHEET_COLS = 11
 
 private enum class GUY_SPRITE(private val frame: Int? = null) {
     STAND,
@@ -31,8 +31,6 @@ private enum class GUY_SPRITE(private val frame: Int? = null) {
     JUMP,
     AIR_ACCEL,
     FALL,
-    DEAD,
-    DEAD2,
     WALK_START,
     WALK_END(GUY_SPRITE.WALK_START() + 3);
     operator fun invoke() = frame ?: ordinal
@@ -80,8 +78,6 @@ class Guy(game: Jmp, y: Float) : Body(
                 else -> direction
             }
             val frame = when {
-                // dead
-                isDead -> GUY_SPRITE.DEAD()
                 // sides touching a box
                 right.isInContact || left.isInContact -> GUY_SPRITE.HANG()
                 // in the air
@@ -92,8 +88,8 @@ class Guy(game: Jmp, y: Float) : Body(
                 }
                 // on the ground
                 v.x.abs < 0.1f -> { walk.reset(); GUY_SPRITE.STAND() }
-                else -> walk.apply { step(delta * v.x.abs) }.frame
-            }
+                else -> walk.frame
+            } + if (isDead) SPRITESHEET_COLS else 0     // death sprites are one row below
 
             // draw trail
             trail.reversed().forEachIndexed { i, (frame, position, direction) ->
@@ -111,7 +107,7 @@ class Guy(game: Jmp, y: Float) : Body(
         }
     }
 
-    override fun step() {
+    override fun step(delta: Float) {
         // move Guy
         when (controller.direction) {
             Direction.LEFT -> body.applyForceToCenter(x = -GUY_MOVE_FORCE)
@@ -131,6 +127,9 @@ class Guy(game: Jmp, y: Float) : Body(
 
         // kill Guy if he leaves the screen
         isDead = position.y < game.camera.bottom
+
+        // update animations
+        walk.step(delta * body.linearVelocity.x.abs)
     }
 
     private fun sensorBeginContact(sensor: Sensor, entity: Entity) {
