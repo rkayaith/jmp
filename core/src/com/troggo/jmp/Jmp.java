@@ -11,6 +11,7 @@ import com.troggo.jmp.screens.start.StartScreen;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -33,23 +34,25 @@ public class Jmp extends com.badlogic.gdx.Game {
         START, GAME
     }
 
-    public  static final float WORLD_WIDTH = 20f;           // m
-    private static final float WORLD_GRAVITY = 25f;         // m/s^2
-    private static final float WORLD_TIME_STEP = 1/300f;    // s
-    private static final float MAX_STEP_DELTA = 0.25f;      // s
-    private static final float WALL_OFFSET = 0.25f;         // m
-    public  static final float FONT_CAMERA_WIDTH = 400;     // px
+    public  static final float WORLD_WIDTH = 20f;               // m
+    private static final float WORLD_GRAVITY = 25f;             // m/s^2
+    private static final float WORLD_TIME_STEP = 1/300f;        // s
+    private static final float MAX_STEP_DELTA = 0.25f;          // s
+    private static final float GAME_OVER_SUSPEND_TIME = 0.5f;   // s
+    private static final float WALL_OFFSET = 0.25f;             // m
+    public  static final float FONT_CAMERA_WIDTH = 400;         // px
     private static final Color BG_COLOR = new Color(0x1c3333ff);
 
     private Box2DDebugRenderer debugRenderer;
 
+    private Preferences store;
     private World world;
     private Array<Body> bodies = new Array<Body>();
     private float worldDelta = 0;   // how far behind the world is from current time
     private float suspendDelta = 0; // how long to suspend the game for
     private boolean suspendTapRequired = false;
     private Runnable suspendCb = null;
-    private int highScore = 0;      // TODO: get high score from storage
+    private int highScore;
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private OrthographicCamera fontCamera;
@@ -62,6 +65,9 @@ public class Jmp extends com.badlogic.gdx.Game {
     private Wall wall2;
 
     public void create() {
+        store = Gdx.app.getPreferences("JMP.STORE");
+        highScore = store.getInteger("highScore", 0);
+
         Box2D.init();
         world = new World(new Vector2(0, -WORLD_GRAVITY), true);
         world.setContactListener(new EntityContactListener());
@@ -230,16 +236,20 @@ public class Jmp extends com.badlogic.gdx.Game {
     public void gameOver(int score) {
         if (score > highScore) {
             highScore = score;
+            store.putInteger("highScore", highScore);
+            store.flush();
         }
-        // TODO: save score if its player's high score
-        // TODO: show game over screen
-
-        if (screen != null) {
-            screen.dispose();
-        }
-        screen = null;
-        camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
-        setScreen(Screen.GAME);
+        suspend(GAME_OVER_SUSPEND_TIME, true, new Runnable() {
+            @Override
+            public void run() {
+                if (screen != null) {
+                    screen.dispose();
+                }
+                screen = null;
+                camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+                setScreen(Screen.GAME);
+            }
+        });
     }
 
     public GlyphLayout write(BitmapFont font, CharSequence str, float x, float y, int align) {

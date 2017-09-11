@@ -28,12 +28,11 @@ import static com.troggo.jmp.utils.GlyphLayoutKt.getWidth;
 
 public class GameScreen implements SteppableScreen {
 
-    private static final float BOX_SPAWN_DISTANCE = 8.0f;       // m
+    private static final float BOX_SPAWN_DISTANCE = 8.0f;   // m
     private static final float CAM_CENTER_PERCENT = 0.65f;
-    private static final float CAM_MIN_SPEED = 1.0f;            // m/s
-    private static final float CAM_MAX_SPEED = 5.0f;            // m/s
-    private static final float CAM_MAX_SPEED_HEIGHT = 100;      // m
-    private static final float GAME_OVER_SUSPEND_TIME = 0.5f;   // s
+    private static final float CAM_MIN_SPEED = 1.0f;        // m/s
+    private static final float CAM_MAX_SPEED = 5.0f;        // m/s
+    private static final float CAM_MAX_SPEED_HEIGHT = 100;  // m
 
     private final Jmp game;
     private final int highScore;
@@ -128,12 +127,7 @@ public class GameScreen implements SteppableScreen {
 
         // end game if Guy is dead
         if (guy.isDead()) {
-            game.suspend(GAME_OVER_SUSPEND_TIME, true, new Runnable() {
-                @Override
-                public void run() {
-                    game.gameOver(score);
-                }
-            });
+            game.gameOver(score);
             return;
         }
 
