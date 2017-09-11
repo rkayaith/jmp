@@ -4,9 +4,10 @@ import com.troggo.jmp.entities.Entity;
 import com.troggo.jmp.entities.EntityContactListener;
 import com.troggo.jmp.entities.Ground;
 import com.troggo.jmp.entities.Wall;
-import com.troggo.jmp.screens.SteppableScreen;
 import com.troggo.jmp.screens.GameScreen;
 import com.troggo.jmp.screens.StartScreen;
+import com.troggo.jmp.screens.SteppableScreen;
+import com.troggo.jmp.utils.Timer;
 import com.troggo.jmp.utils.TouchInput;
 
 import com.badlogic.gdx.Gdx;
@@ -48,8 +49,8 @@ public class Jmp extends com.badlogic.gdx.Game {
     private Preferences store;
     private World world;
     private final Array<Body> bodies = new Array<>();
-    private float worldDelta = 0;   // how far behind the world is from current time
-    private float suspendDelta = 0; // how long to suspend the game for
+    private Timer worldTimer = new Timer();     // how far behind the world is from current time
+    private Timer suspendTimer = new Timer(0, false);   // how long to suspend the game for
     private boolean suspendTapRequired = false;
     private Runnable suspendCb = null;
     private int highScore;
@@ -87,7 +88,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         input = new InputMultiplexer();
         Gdx.input.setInputProcessor(input);
         input.addProcessor(new TouchInput(() -> {
-            if (suspendTapRequired && suspendDelta == 0) {
+            if (suspendTapRequired && suspendTimer.isDone()) {
                 unsuspend();
                 return true;
             }
@@ -151,13 +152,15 @@ public class Jmp extends com.badlogic.gdx.Game {
     }
 
     private void step(float delta) {
-        worldDelta += delta;
+        worldTimer.add(delta);
         // catch physics world up to current time
-        while (worldDelta > WORLD_TIME_STEP) {
-            worldDelta -= WORLD_TIME_STEP;
+        while (!worldTimer.isDone()) {
+            worldTimer.step(WORLD_TIME_STEP);
 
             if (suspended()) {
-                wait(WORLD_TIME_STEP);
+                if (suspendTimer.step(delta).isDone() && !suspendTapRequired) {
+                    unsuspend();
+                }
             } else {
                 // step all entities in world
                 world.getBodies(bodies);
@@ -180,24 +183,12 @@ public class Jmp extends com.badlogic.gdx.Game {
         }
     }
 
-    private void wait(float delta) {
-        if (suspendDelta > delta) {
-            suspendDelta -= delta;
-        } else if (suspendDelta > 0) {
-            if (suspendTapRequired) {
-                suspendDelta = 0;
-            } else {
-                unsuspend();
-            }
-        }
-    }
-
     private boolean suspended() {
-        return suspendTapRequired || suspendDelta > 0;
+        return suspendTapRequired || !suspendTimer.isDone();
     }
 
     private void unsuspend() {
-        suspendDelta = 0;
+        suspendTimer.reset();
         suspendTapRequired = false;
         if (suspendCb != null) {
             suspendCb.run();
@@ -225,7 +216,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         if (suspendCb != null) {
             throw new IllegalStateException("Multiple concurrent suspends not implemented.");
         }
-        suspendDelta = t;
+        suspendTimer.add(t);
         suspendTapRequired = tapRequired;
         suspendCb = func;
     }

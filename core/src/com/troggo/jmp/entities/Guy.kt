@@ -66,7 +66,7 @@ class Guy(game: Jmp, y: Float) : Body(
     private var direction = Direction.RIGHT
     private val walk = sprites.Animation(GUY_SPRITE.WALK_START()..GUY_SPRITE.WALK_END(), GUY_WALK_ANIM_DIST)
     private val trail = CappedArrayList<Triple<Int, Vector2, Direction>>(GUY_TRAIL_LENGTH)
-    private var trailDelta = GUY_TRAIL_INTERVAL
+    private var trailTimer = Timer(GUY_TRAIL_INTERVAL).apply { set(0f) }
 
     override fun render(delta: Float) = body.linearVelocity.let { v ->
         direction = when {
@@ -96,10 +96,10 @@ class Guy(game: Jmp, y: Float) : Body(
                 draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
             }
         }
-        trailDelta += delta
-        if (trailDelta >= GUY_TRAIL_INTERVAL)  {
+
+        if (trailTimer.step(delta).isDone)  {
+            trailTimer.reset()
             trail.add(Triple(frame, position.copy(), direction))
-            trailDelta -= GUY_TRAIL_INTERVAL
         }
 
         game.batch.draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
