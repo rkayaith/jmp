@@ -4,16 +4,11 @@ interface Poolable {
     fun reset()
 }
 
-open class Pool<T: Poolable>(private val _create: ((Pool<T>) -> T)? = null) {
+open class Pool<T: Poolable>(private val create: (Pool<T>) -> T) {
     private val free = ArrayList<T>()
     private val obtained = ArrayList<T>()
     val pool get() = free + obtained
 
-    open protected fun create(pool: Pool<T>): T {
-        return _create?.invoke(pool) ?: throw Exception(
-            "Provide create function to constructor or override 'fun create'"
-        )
-    }
     fun obtain(): T {
         return (if (free.isNotEmpty()) free.removeAt(0).apply { reset() } else create(this)).also {
             obtained.add(it)

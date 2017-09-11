@@ -1,4 +1,4 @@
-package com.troggo.jmp.screens.game;
+package com.troggo.jmp.screens;
 
 import com.troggo.jmp.Jmp;
 import com.troggo.jmp.entities.Box;
@@ -13,17 +13,15 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.List;
 
-import static com.troggo.jmp.utils.GlyphLayoutKt.getHeight;
 import static com.troggo.jmp.Jmp.WORLD_WIDTH;
 import static com.troggo.jmp.entities.BoxKt.BOX_FALL_SPEED;
 import static com.troggo.jmp.entities.BoxKt.BOX_HEIGHT;
 import static com.troggo.jmp.entities.GuyKt.GUY_HEIGHT;
 import static com.troggo.jmp.utils.CameraKt.getBottom;
 import static com.troggo.jmp.utils.CameraKt.getTop;
+import static com.troggo.jmp.utils.GlyphLayoutKt.getHeight;
 import static com.troggo.jmp.utils.GlyphLayoutKt.getWidth;
 
 public class GameScreen implements SteppableScreen {
@@ -38,23 +36,10 @@ public class GameScreen implements SteppableScreen {
     private final int highScore;
 
     private final Guy guy;
-    private final Pool<Box> squareBoxes = new Pool<Box>() {
-        @NotNull
-        @Override
-        protected Box create(@NotNull Pool<Box> pool) {
-            return new Box(game, pool, true, 0, 0);
-        }
-    };
+    private final Pool<Box> squareBoxes;
+    private final Pool<Box> rectBoxes;
+    private final float groundLevel;
 
-    private final Pool<Box> rectBoxes = new Pool<Box>() {
-        @NotNull
-        @Override
-        protected Box create(@NotNull Pool<Box> pool) {
-            return new Box(game, pool, false, 0, 0);
-        }
-    };
-
-    private float groundLevel;
     private int score = 0;
     private float guyMaxY = 0;
     private float boxSpawnDelta = 0;
@@ -63,6 +48,10 @@ public class GameScreen implements SteppableScreen {
     public GameScreen(final Jmp _game, int _highScore) {
         game = _game;
         highScore = _highScore;
+
+        squareBoxes = new Pool<>(pool -> new Box(game, pool, true, 0, 0));
+        rectBoxes = new Pool<>(pool -> new Box(game, pool, false, 0, 0));
+
         Ground ground = game.getGround();
         groundLevel = ground.getPosition().y + ground.getDimensions().getHeight() / 2 + GUY_HEIGHT / 2;
         guy = new Guy(game, groundLevel);
@@ -117,7 +106,7 @@ public class GameScreen implements SteppableScreen {
         game.write(font, sValue, x + width - getWidth(sValue, cam), y);
         if (guy.isDead() && highScore > this.highScore) {
             y -= getHeight(sLabel, cam) * 2;
-            game.write(game.getFontH2(), "NEW HIGH SCORE!", 0, y, Align.center);
+            game.write(game.getFontH2(), "New High Score!", 0, y, Align.center);
         }
     }
 

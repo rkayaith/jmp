@@ -5,7 +5,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.Shape
 import com.badlogic.gdx.physics.box2d.joints.WeldJointDef
 import com.troggo.jmp.Jmp
-import com.troggo.jmp.screens.game.GameScreen
+import com.troggo.jmp.screens.GameScreen
 import com.troggo.jmp.utils.Pool
 import com.troggo.jmp.utils.Poolable
 import com.troggo.jmp.utils.SpriteSheet

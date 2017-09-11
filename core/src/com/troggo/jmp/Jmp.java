@@ -5,11 +5,11 @@ import com.troggo.jmp.entities.EntityContactListener;
 import com.troggo.jmp.entities.Ground;
 import com.troggo.jmp.entities.Wall;
 import com.troggo.jmp.screens.SteppableScreen;
-import com.troggo.jmp.screens.game.GameScreen;
-import com.troggo.jmp.screens.start.StartScreen;
+import com.troggo.jmp.screens.GameScreen;
+import com.troggo.jmp.screens.StartScreen;
+import com.troggo.jmp.utils.TouchInput;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
@@ -47,7 +47,7 @@ public class Jmp extends com.badlogic.gdx.Game {
 
     private Preferences store;
     private World world;
-    private Array<Body> bodies = new Array<Body>();
+    private final Array<Body> bodies = new Array<>();
     private float worldDelta = 0;   // how far behind the world is from current time
     private float suspendDelta = 0; // how long to suspend the game for
     private boolean suspendTapRequired = false;
@@ -86,16 +86,13 @@ public class Jmp extends com.badlogic.gdx.Game {
 
         input = new InputMultiplexer();
         Gdx.input.setInputProcessor(input);
-        input.addProcessor(new InputAdapter() {
-            @Override
-            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                if (suspendTapRequired && suspendDelta == 0) {
-                    unsuspend();
-                    return true;
-                }
-                return false;
+        input.addProcessor(new TouchInput(() -> {
+            if (suspendTapRequired && suspendDelta == 0) {
+                unsuspend();
+                return true;
             }
-        });
+            return false;
+        }));
 
         debugRenderer = new Box2DDebugRenderer();
 
@@ -239,16 +236,13 @@ public class Jmp extends com.badlogic.gdx.Game {
             store.putInteger("highScore", highScore);
             store.flush();
         }
-        suspend(GAME_OVER_SUSPEND_TIME, true, new Runnable() {
-            @Override
-            public void run() {
-                if (screen != null) {
-                    screen.dispose();
-                }
-                screen = null;
-                camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
-                setScreen(Screen.GAME);
+        suspend(GAME_OVER_SUSPEND_TIME, true, () -> {
+            if (screen != null) {
+                screen.dispose();
             }
+            screen = null;
+            camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+            setScreen(Screen.GAME);
         });
     }
 

@@ -1,8 +1,8 @@
-package com.troggo.jmp.screens.start;
+package com.troggo.jmp.screens;
 
 import com.troggo.jmp.Jmp;
 import com.troggo.jmp.Jmp.Screen;
-import com.troggo.jmp.screens.SteppableScreen;
+import com.troggo.jmp.utils.TouchInput;
 
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.utils.Align;
@@ -10,7 +10,10 @@ import com.badlogic.gdx.utils.Align;
 public class StartScreen implements SteppableScreen {
     private final Jmp game;
 
-    private final InputAdapter controller = new StartScreenController(this);
+    private final InputAdapter controller = new TouchInput(() -> {
+        startGame();
+        return true;
+    });
 
     public StartScreen(final Jmp _game) {
         game = _game;

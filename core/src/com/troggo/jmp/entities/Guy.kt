@@ -68,43 +68,41 @@ class Guy(game: Jmp, y: Float) : Body(
     private val trail = CappedArrayList<Triple<Int, Vector2, Direction>>(GUY_TRAIL_LENGTH)
     private var trailDelta = GUY_TRAIL_INTERVAL
 
-    override fun render(delta: Float) {
-        body.linearVelocity.let { v ->
-            direction = when {
-                right.isInContact -> Direction.RIGHT
-                left.isInContact -> Direction.LEFT
-                v.x > 0 -> Direction.RIGHT
-                v.x < 0 -> Direction.LEFT
-                else -> direction
-            }
-            val frame = when {
-                // sides touching a box
-                right.isInContact || left.isInContact -> GUY_SPRITE.HANG()
-                // in the air
-                !foot.isInContact -> when {
-                    v.y < 0 -> GUY_SPRITE.FALL()
-                    v.x.abs < GUY_MAX_SPEED && controller.direction != Direction.STOPPED -> GUY_SPRITE.AIR_ACCEL()
-                    else -> GUY_SPRITE.JUMP()
-                }
-                // on the ground
-                v.x.abs < 0.1f -> { walk.reset(); GUY_SPRITE.STAND() }
-                else -> walk.frame
-            } + if (isDead) SPRITESHEET_COLS else 0     // death sprites are one row below
-
-            // draw trail
-            trail.reversed().forEachIndexed { i, (frame, position, direction) ->
-                game.batch.withAlpha(GUY_TRAIL_ALPHA - i * GUY_TRAIL_ALPHA / GUY_TRAIL_LENGTH) {
-                    draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
-                }
-            }
-            trailDelta += delta
-            if (trailDelta >= GUY_TRAIL_INTERVAL)  {
-                trail.add(Triple(frame, position.copy(), direction))
-                trailDelta -= GUY_TRAIL_INTERVAL
-            }
-
-            game.batch.draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+    override fun render(delta: Float) = body.linearVelocity.let { v ->
+        direction = when {
+            right.isInContact -> Direction.RIGHT
+            left.isInContact -> Direction.LEFT
+            v.x > 0 -> Direction.RIGHT
+            v.x < 0 -> Direction.LEFT
+            else -> direction
         }
+        val frame = when {
+            // sides touching a box
+            right.isInContact || left.isInContact -> GUY_SPRITE.HANG()
+            // in the air
+            !foot.isInContact -> when {
+                v.y < 0 -> GUY_SPRITE.FALL()
+                v.x.abs < GUY_MAX_SPEED && controller.direction != Direction.STOPPED -> GUY_SPRITE.AIR_ACCEL()
+                else -> GUY_SPRITE.JUMP()
+            }
+            // on the ground
+            v.x.abs < 0.1f -> { walk.reset(); GUY_SPRITE.STAND() }
+            else -> walk.frame
+        } + if (isDead) SPRITESHEET_COLS else 0     // death sprites are one row below
+
+        // draw trail
+        trail.reversed().forEachIndexed { i, (frame, position, direction) ->
+            game.batch.withAlpha(GUY_TRAIL_ALPHA - i * GUY_TRAIL_ALPHA / GUY_TRAIL_LENGTH) {
+                draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+            }
+        }
+        trailDelta += delta
+        if (trailDelta >= GUY_TRAIL_INTERVAL)  {
+            trail.add(Triple(frame, position.copy(), direction))
+            trailDelta -= GUY_TRAIL_INTERVAL
+        }
+
+        game.batch.draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
     }
 
     override fun step(delta: Float) {
