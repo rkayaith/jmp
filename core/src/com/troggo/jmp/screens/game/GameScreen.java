@@ -8,6 +8,8 @@ import com.troggo.jmp.screens.SteppableScreen;
 import com.troggo.jmp.utils.Pool;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 
@@ -15,24 +17,26 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import static com.troggo.jmp.utils.GlyphLayoutKt.getHeight;
 import static com.troggo.jmp.Jmp.WORLD_WIDTH;
 import static com.troggo.jmp.entities.BoxKt.BOX_FALL_SPEED;
 import static com.troggo.jmp.entities.BoxKt.BOX_HEIGHT;
 import static com.troggo.jmp.entities.GuyKt.GUY_HEIGHT;
 import static com.troggo.jmp.utils.CameraKt.getBottom;
 import static com.troggo.jmp.utils.CameraKt.getTop;
+import static com.troggo.jmp.utils.GlyphLayoutKt.getWidth;
 
 public class GameScreen implements SteppableScreen {
 
-    private static final float BOX_SPAWN_DISTANCE = 8.0f;   // m
+    private static final float BOX_SPAWN_DISTANCE = 8.0f;       // m
     private static final float CAM_CENTER_PERCENT = 0.65f;
-    private static final float CAM_MIN_SPEED = 1.0f;        // m/s
-    private static final float CAM_MAX_SPEED = 5.0f;        // m/s
-    private static final float CAM_MAX_SPEED_HEIGHT = 100;  // m
-    private static final float GAME_OVER_SUSPEND_TIME = 1f; // s
+    private static final float CAM_MIN_SPEED = 1.0f;            // m/s
+    private static final float CAM_MAX_SPEED = 5.0f;            // m/s
+    private static final float CAM_MAX_SPEED_HEIGHT = 100;      // m
+    private static final float GAME_OVER_SUSPEND_TIME = 0.5f;   // s
 
     private final Jmp game;
-    private final float highScore;
+    private final int highScore;
 
     private final Guy guy;
     private final Pool<Box> squareBoxes = new Pool<Box>() {
@@ -52,11 +56,12 @@ public class GameScreen implements SteppableScreen {
     };
 
     private float groundLevel;
+    private int score = 0;
     private float guyMaxY = 0;
     private float boxSpawnDelta = 0;
     private float boxSpawnY = 0;
 
-    public GameScreen(final Jmp _game, float _highScore) {
+    public GameScreen(final Jmp _game, int _highScore) {
         game = _game;
         highScore = _highScore;
         Ground ground = game.getGround();
@@ -79,6 +84,7 @@ public class GameScreen implements SteppableScreen {
 
     @Override
     public void render(float delta) {
+        // raise camera if Guy gets too high
         float guyY = guy.getPosition().y;
         Camera cam = game.getCamera();
         float camY = getBottom(cam) + cam.viewportHeight * CAM_CENTER_PERCENT;
@@ -86,12 +92,33 @@ public class GameScreen implements SteppableScreen {
             game.getCamera().translate(0, guyY - camY);
         }
 
-        String scores =
-            "HIGH SCORE: " + (int)highScore + "m\n" +
-            "SCORE:      " + (int)guyMaxY + "m";
-        game.write(game.getFontH2(), scores, 0, cam.viewportHeight - 0.1f, Align.left);
+        // draw scores
+        int highScore = Math.max(score, this.highScore);
+        BitmapFont font = game.getFontH3();
+        GlyphLayout hLabel = new GlyphLayout(font, "HIGH SCORE: ");
+        GlyphLayout hValue = new GlyphLayout(font, "" + highScore);
+        GlyphLayout sLabel = new GlyphLayout(font, "SCORE: ");
+        GlyphLayout sValue = new GlyphLayout(font, "" + score);
+        float y;
+        float x;
+        float width = getWidth(hLabel, cam) + Math.max(getWidth(hValue, cam), getWidth(sValue, cam));
         if (guy.isDead()) {
-            game.write(game.getFontH1(), "RIP", 0, cam.viewportHeight / 2, Align.center);
+            y = cam.viewportHeight * 0.6f;
+            x = game.getCamera().viewportWidth / 2f - width / 2;
+            GlyphLayout rip = game.write(game.getFontH1(), "RIP", 0, y, Align.center);
+            y -= getHeight(rip, cam) * 1.2f;
+        } else {
+            y = cam.viewportHeight - 0.4f;
+            x = 0.3f;
+        }
+        game.write(font, hLabel, x, y);
+        game.write(font, hValue, x + width - getWidth(hValue, cam), y);
+        y -= getHeight(hLabel, cam) * 1.3f;
+        game.write(font, sLabel, x, y);
+        game.write(font, sValue, x + width - getWidth(sValue, cam), y);
+        if (guy.isDead() && highScore > this.highScore) {
+            y -= getHeight(sLabel, cam) * 2;
+            game.write(game.getFontH2(), "NEW HIGH SCORE!", 0, y, Align.center);
         }
     }
 
@@ -101,10 +128,10 @@ public class GameScreen implements SteppableScreen {
 
         // end game if Guy is dead
         if (guy.isDead()) {
-            game.suspend(GAME_OVER_SUSPEND_TIME, new Runnable() {
+            game.suspend(GAME_OVER_SUSPEND_TIME, true, new Runnable() {
                 @Override
                 public void run() {
-                    game.gameOver(guyMaxY);
+                    game.gameOver(score);
                 }
             });
             return;
@@ -154,4 +181,13 @@ public class GameScreen implements SteppableScreen {
 
     @Override
     public void resume() { }
+
+    // getters / setters
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int s) {
+        score = s;
+    }
 }

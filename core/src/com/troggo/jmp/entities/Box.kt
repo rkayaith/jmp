@@ -5,6 +5,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.Shape
 import com.badlogic.gdx.physics.box2d.joints.WeldJointDef
 import com.troggo.jmp.Jmp
+import com.troggo.jmp.screens.game.GameScreen
 import com.troggo.jmp.utils.Pool
 import com.troggo.jmp.utils.Poolable
 import com.troggo.jmp.utils.SpriteSheet
@@ -91,7 +92,10 @@ class Box(
 
     // used by Guy
     fun touch() {
-        touched = true
+        if (!touched) {
+            touched = true
+            (game.screen as? GameScreen)?.run { score++ }
+        }
     }
 
     // we need a separate body to detect collisions for the box since kinematic bodies can't collide with other bodies

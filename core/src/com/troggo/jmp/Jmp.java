@@ -9,11 +9,13 @@ import com.troggo.jmp.screens.game.GameScreen;
 import com.troggo.jmp.screens.start.StartScreen;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
@@ -36,7 +38,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private static final float WORLD_TIME_STEP = 1/300f;    // s
     private static final float MAX_STEP_DELTA = 0.25f;      // s
     private static final float WALL_OFFSET = 0.25f;         // m
-    private static final float FONT_CAMERA_WIDTH = 400;     // px
+    public  static final float FONT_CAMERA_WIDTH = 400;     // px
     private static final Color BG_COLOR = new Color(0x1c3333ff);
 
     private Box2DDebugRenderer debugRenderer;
@@ -45,13 +47,15 @@ public class Jmp extends com.badlogic.gdx.Game {
     private Array<Body> bodies = new Array<Body>();
     private float worldDelta = 0;   // how far behind the world is from current time
     private float suspendDelta = 0; // how long to suspend the game for
+    private boolean suspendTapRequired = false;
     private Runnable suspendCb = null;
-    private float highScore = 0;    // TODO: get high score from storage
+    private int highScore = 0;      // TODO: get high score from storage
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private OrthographicCamera fontCamera;
     private BitmapFont fontH1;
     private BitmapFont fontH2;
+    private BitmapFont fontH3;
     private InputMultiplexer input;
     private Ground ground;
     private Wall wall1;
@@ -71,10 +75,21 @@ public class Jmp extends com.badlogic.gdx.Game {
         fontCamera.setToOrtho(false, FONT_CAMERA_WIDTH, FONT_CAMERA_WIDTH * h / w);
 
         fontH1 = generateFont("04B_30__.TTF", 32);
-        fontH2 = generateFont("VCR_OSD_MONO_1.001.ttf", 21);
+        fontH2 = generateFont("04B_30__.TTF", 15);
+        fontH3 = generateFont("VCR_OSD_MONO_1.001.ttf", 21);
 
         input = new InputMultiplexer();
         Gdx.input.setInputProcessor(input);
+        input.addProcessor(new InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (suspendTapRequired && suspendDelta == 0) {
+                    unsuspend();
+                    return true;
+                }
+                return false;
+            }
+        });
 
         debugRenderer = new Box2DDebugRenderer();
 
@@ -138,7 +153,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         while (worldDelta > WORLD_TIME_STEP) {
             worldDelta -= WORLD_TIME_STEP;
 
-            if (suspendDelta > 0) {
+            if (suspended()) {
                 wait(WORLD_TIME_STEP);
             } else {
                 // step all entities in world
@@ -166,11 +181,24 @@ public class Jmp extends com.badlogic.gdx.Game {
         if (suspendDelta > delta) {
             suspendDelta -= delta;
         } else if (suspendDelta > 0) {
-            suspendDelta = 0;
-            if (suspendCb != null) {
-                suspendCb.run();
-                suspendCb = null;
+            if (suspendTapRequired) {
+                suspendDelta = 0;
+            } else {
+                unsuspend();
             }
+        }
+    }
+
+    private boolean suspended() {
+        return suspendTapRequired || suspendDelta > 0;
+    }
+
+    private void unsuspend() {
+        suspendDelta = 0;
+        suspendTapRequired = false;
+        if (suspendCb != null) {
+            suspendCb.run();
+            suspendCb = null;
         }
     }
 
@@ -188,38 +216,47 @@ public class Jmp extends com.badlogic.gdx.Game {
         }
     }
 
-    public void suspend(float t, Runnable func) {
+    public void suspend(float t, boolean tapRequired, Runnable func) {
         // stop world from updating for t seconds
         // renders will still occur
-        suspendDelta = t;
         if (suspendCb != null) {
             throw new IllegalStateException("Multiple concurrent suspends not implemented.");
         }
+        suspendDelta = t;
+        suspendTapRequired = tapRequired;
         suspendCb = func;
     }
 
-    public void gameOver(float score) {
-        if (screen != null) {
-            screen.dispose();
-        }
-        screen = null;
-        camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
-        setScreen(Screen.START);
+    public void gameOver(int score) {
         if (score > highScore) {
             highScore = score;
         }
         // TODO: save score if its player's high score
         // TODO: show game over screen
+
+        if (screen != null) {
+            screen.dispose();
+        }
+        screen = null;
+        camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+        setScreen(Screen.GAME);
     }
 
-    public void write(BitmapFont font, CharSequence str, float x, float y, int align) {
+    public GlyphLayout write(BitmapFont font, CharSequence str, float x, float y, int align) {
+        GlyphLayout l = new GlyphLayout(font, str, font.getColor(), FONT_CAMERA_WIDTH, align, true);
+        return write(font, l, x, y);
+    }
+
+    public GlyphLayout write(BitmapFont font, GlyphLayout layout, float x, float y) {
         // convert co-ords from game camera to font camera
-        x *= FONT_CAMERA_WIDTH / WORLD_WIDTH;
-        y *= fontCamera.viewportHeight / camera.viewportHeight;
+        float scale = FONT_CAMERA_WIDTH / WORLD_WIDTH;
+        x *= scale;
+        y *= scale;
 
         batch.setProjectionMatrix(fontCamera.combined);
-        font.draw(batch, str, x, y, FONT_CAMERA_WIDTH, align, true);
+        font.draw(batch, layout, x, y);
         batch.setProjectionMatrix(camera.combined);
+        return layout;
     }
 
     private BitmapFont generateFont(String file, int size) {
@@ -261,6 +298,10 @@ public class Jmp extends com.badlogic.gdx.Game {
 
     public BitmapFont getFontH2() {
         return fontH2;
+    }
+
+    public BitmapFont getFontH3() {
+        return fontH3;
     }
 
     public InputMultiplexer getInput() {
