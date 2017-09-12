@@ -4,8 +4,8 @@ import com.troggo.jmp.Jmp;
 import com.troggo.jmp.entities.Box;
 import com.troggo.jmp.entities.Ground;
 import com.troggo.jmp.entities.Guy;
-import com.troggo.jmp.screens.SteppableScreen;
 import com.troggo.jmp.utils.Pool;
+import com.troggo.jmp.utils.Timer;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -44,6 +44,8 @@ public class GameScreen implements SteppableScreen {
     private float guyMaxY = 0;
     private float boxSpawnDelta = 0;
     private float boxSpawnY = 0;
+    private boolean showScoreMsg = true;
+    private final Timer showScoreMsgTimer = new Timer(0.85f, true);
 
     public GameScreen(final Jmp _game, int _highScore) {
         game = _game;
@@ -105,8 +107,14 @@ public class GameScreen implements SteppableScreen {
         game.write(font, sLabel, x, y);
         game.write(font, sValue, x + width - getWidth(sValue, cam), y);
         if (guy.isDead() && highScore > this.highScore) {
-            y -= getHeight(sLabel, cam) * 2;
-            game.write(game.getFontH2(), "New High Score!", 0, y, Align.center);
+            if (showScoreMsgTimer.step(delta).isDone()) {
+                showScoreMsg = !showScoreMsg;
+                showScoreMsgTimer.reset();
+            }
+            if (showScoreMsg) {
+                y -= getHeight(sLabel, cam) * 2;
+                game.write(game.getFontH2(), "New High Score!", 0, y, Align.center);
+            }
         }
     }
 
