@@ -70,7 +70,7 @@ abstract class Body(
         game.world.destroyBody(body)
     }
 
-    override fun render(delta: Float) = game.batch.draw(sprites[0], position, dimensions)
+    override fun render(delta: Float) = game.batchQueue.add { draw(sprites[0], position, dimensions) }
 
     open inner class Fixture(
         width: Float,

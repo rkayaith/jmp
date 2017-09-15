@@ -90,19 +90,21 @@ class Guy(game: Jmp, y: Float) : Body(
             else -> walk.frame
         } + if (isDead) SPRITESHEET_COLS else 0     // death sprites are one row below
 
-        // draw trail
-        trail.reversed().forEachIndexed { i, (frame, position, direction) ->
-            game.batch.withAlpha(GUY_TRAIL_ALPHA - i * GUY_TRAIL_ALPHA / GUY_TRAIL_LENGTH) {
-                draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+        game.batchQueue.add {
+            // draw trail
+            trail.reversed().forEachIndexed { i, (frame, position, direction) ->
+                withAlpha(GUY_TRAIL_ALPHA - i * GUY_TRAIL_ALPHA / GUY_TRAIL_LENGTH) {
+                    draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+                }
             }
-        }
 
-        if (trailTimer.step(delta).isDone)  {
-            trailTimer.reset()
-            trail.add(Triple(frame, position.copy(), direction))
-        }
+            if (trailTimer.step(delta).isDone)  {
+                trailTimer.reset()
+                trail.add(Triple(frame, position.copy(), direction))
+            }
 
-        game.batch.draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+            draw(sprites[frame], position, dimensions, flipX = (direction != Direction.RIGHT))
+        }
     }
 
     override fun step(delta: Float) {

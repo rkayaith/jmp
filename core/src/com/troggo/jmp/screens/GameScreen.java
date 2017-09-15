@@ -4,6 +4,7 @@ import com.troggo.jmp.Jmp;
 import com.troggo.jmp.entities.Box;
 import com.troggo.jmp.entities.Ground;
 import com.troggo.jmp.entities.Guy;
+import com.troggo.jmp.utils.BatchQueue;
 import com.troggo.jmp.utils.Pool;
 import com.troggo.jmp.utils.Timer;
 

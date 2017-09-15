@@ -17,3 +17,14 @@ fun Batch.withAlpha(alpha: Float, fn: Batch.() -> Unit) {
     fn()
     color = c
 }
+
+fun Batch.run(queue: BatchQueue) = queue.run {
+    sortBy { (z, _) -> z }
+    forEach { (_, fn) -> fn() }
+    clear()
+}
+
+class BatchQueue : ArrayList<Pair<Int, Batch.() -> Unit>>() {
+    fun add(fn: Batch.() -> Unit) = add(0, fn)
+    fun add(z: Int, fn: Batch.() -> Unit) { add(Pair(z, fn)) }
+}

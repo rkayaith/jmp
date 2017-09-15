@@ -69,7 +69,7 @@ class Box(
             !touched && square -> BOX_SPRITE.S_UNTOUCHED()
             else -> BOX_SPRITE.R_UNTOUCHED()
         }
-        game.batch.draw(sprites[frame], position, dimensions)
+        game.batchQueue.add(1) { draw(sprites[frame], position, dimensions) }
     }
 
     override fun step(delta: Float) {

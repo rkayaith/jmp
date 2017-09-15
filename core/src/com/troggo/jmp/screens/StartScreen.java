@@ -30,7 +30,7 @@ public class StartScreen implements SteppableScreen {
         game.write(game.getFontH1(), "Tap To Start", 0, game.getCamera().viewportHeight / 1.8f, Align.center);
     }
 
-    void startGame() {
+    private void startGame() {
         game.setScreen(Screen.GAME);
         dispose();
     }

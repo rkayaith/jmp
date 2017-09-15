@@ -7,6 +7,7 @@ import com.troggo.jmp.entities.Wall;
 import com.troggo.jmp.screens.GameScreen;
 import com.troggo.jmp.screens.StartScreen;
 import com.troggo.jmp.screens.SteppableScreen;
+import com.troggo.jmp.utils.BatchQueue;
 import com.troggo.jmp.utils.Timer;
 import com.troggo.jmp.utils.TouchInput;
 
@@ -29,6 +30,8 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 
+import static com.troggo.jmp.utils.BatchKt.run;
+
 public class Jmp extends com.badlogic.gdx.Game {
 
     public enum Screen {
@@ -40,9 +43,9 @@ public class Jmp extends com.badlogic.gdx.Game {
     private static final float WORLD_TIME_STEP = 1/300f;        // s
     private static final float MAX_STEP_DELTA = 0.25f;          // s
     private static final float GAME_OVER_SUSPEND_TIME = 0.5f;   // s
-    private static final float WALL_OFFSET = 0.25f;             // m
+    private static final float WALL_OFFSET = 0.05f;             // m
     public  static final float FONT_CAMERA_WIDTH = 400;         // px
-    private static final Color BG_COLOR = new Color(0x1c3333ff);
+    private static final Color BG_COLOR = new Color(0x001e21ff);
 
     private Box2DDebugRenderer debugRenderer;
 
@@ -55,6 +58,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private Runnable suspendCb = null;
     private int highScore;
     private SpriteBatch batch;
+    private BatchQueue batchQueue;
     private OrthographicCamera camera;
     private OrthographicCamera fontCamera;
     private BitmapFont fontH1;
@@ -73,6 +77,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         world = new World(new Vector2(0, -WORLD_GRAVITY), true);
         world.setContactListener(new EntityContactListener());
         batch = new SpriteBatch();
+        batchQueue = new BatchQueue();
 
         float w = Gdx.graphics.getWidth();
         float h = Gdx.graphics.getHeight();
@@ -132,7 +137,6 @@ public class Jmp extends com.badlogic.gdx.Game {
 
         world.getBodies(bodies);
 
-        batch.begin();
         // render all entities in world
         for (Body body : bodies) {
             for (Fixture fixture : body.getFixtureList()) {
@@ -143,6 +147,8 @@ public class Jmp extends com.badlogic.gdx.Game {
             }
         }
         super.render();
+        batch.begin();
+        run(batch, batchQueue);
         batch.end();
 
         if (debug) {
@@ -245,12 +251,14 @@ public class Jmp extends com.badlogic.gdx.Game {
     public GlyphLayout write(BitmapFont font, GlyphLayout layout, float x, float y) {
         // convert co-ords from game camera to font camera
         float scale = FONT_CAMERA_WIDTH / WORLD_WIDTH;
-        x *= scale;
-        y *= scale;
 
-        batch.setProjectionMatrix(fontCamera.combined);
-        font.draw(batch, layout, x, y);
-        batch.setProjectionMatrix(camera.combined);
+        batchQueue.add(10, batch -> {
+            batch.setProjectionMatrix(fontCamera.combined);
+            font.draw(batch, layout, x * scale, y * scale);
+            batch.setProjectionMatrix(camera.combined);
+            return null;
+        });
+
         return layout;
     }
 
@@ -275,16 +283,16 @@ public class Jmp extends com.badlogic.gdx.Game {
         return world;
     }
 
+    public BatchQueue getBatchQueue() {
+        return batchQueue;
+    }
+
     public Ground getGround() {
         return ground;
     }
 
     public OrthographicCamera getCamera() {
         return camera;
-    }
-
-    public SpriteBatch getBatch() {
-        return batch;
     }
 
     public BitmapFont getFontH1() {
