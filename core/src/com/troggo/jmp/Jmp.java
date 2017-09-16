@@ -1,5 +1,6 @@
 package com.troggo.jmp;
 
+import com.troggo.jmp.entities.Background;
 import com.troggo.jmp.entities.Entity;
 import com.troggo.jmp.entities.EntityContactListener;
 import com.troggo.jmp.entities.Ground;
@@ -66,6 +67,7 @@ public class Jmp extends com.badlogic.gdx.Game {
     private BitmapFont fontH3;
     private InputMultiplexer input;
     private Ground ground;
+    private Background background;
     private Wall wall1;
     private Wall wall2;
 
@@ -103,6 +105,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         debugRenderer = new Box2DDebugRenderer();
 
         ground = new Ground(this, WORLD_WIDTH);
+        background = new Background(this);
         wall1 = new Wall(this, -WALL_OFFSET);
         wall2 = new Wall(this, WORLD_WIDTH + WALL_OFFSET);
 
@@ -115,6 +118,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         fontH1.dispose();
         fontH2.dispose();
         ground.dispose();
+        background.dispose();
         wall1.dispose();
         wall2.dispose();
         super.dispose();
@@ -239,6 +243,7 @@ public class Jmp extends com.badlogic.gdx.Game {
             }
             screen = null;
             camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+            background.reset();
             setScreen(Screen.GAME);
         });
     }
