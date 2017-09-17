@@ -5,7 +5,11 @@ import com.troggo.jmp.Jmp.Screen;
 import com.troggo.jmp.utils.TouchInput;
 
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.utils.Align;
+
+import static com.troggo.jmp.utils.GlyphLayoutKt.getHeight;
 
 public class StartScreen implements SteppableScreen {
     private final Jmp game;
@@ -27,7 +31,13 @@ public class StartScreen implements SteppableScreen {
 
     @Override
     public void render(float delta) {
-        game.write(game.getFontH1(), "Tap To Start", 0, game.getCamera().viewportHeight / 1.8f, Align.center);
+        float y = game.getCamera().viewportHeight / 2 + 1.5f;
+        Camera cam = game.getCamera();
+        GlyphLayout tap = game.write(game.getFontH1(), "Tap To Start", 0, y, Align.center);
+        y -= getHeight(tap, cam) * 1.85;
+        GlyphLayout hold = game.write(game.getFontH3(), "HOLD LEFT/RIGHT TO MOVE", 0, y, Align.center);
+        y -= getHeight(hold, cam) * 1.3;
+        game.write(game.getFontH3(), "TAP TO JUMP", 0, y, Align.center);
     }
 
     private void startGame() {
