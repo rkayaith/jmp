@@ -23,10 +23,10 @@ android {
     }
     defaultConfig {
         applicationId "com.troggo.jmp"
-        minSdkVersion 9
+        minSdkVersion 14
         targetSdkVersion 26
         versionCode 1
-        versionName "1.0"
+        versionName "0.0.1-alpha"
     }
     buildTypes {
         release {
