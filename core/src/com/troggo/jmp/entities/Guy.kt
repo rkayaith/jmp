@@ -6,8 +6,8 @@ import com.badlogic.gdx.math.Vector3
 import com.troggo.jmp.Jmp
 import com.troggo.jmp.utils.*
 
-public  const val GUY_HEIGHT = 2f   // m
-private const val GUY_WEIGHT = 55f  // kg
+const val GUY_HEIGHT = 2f                       // m
+private const val GUY_WEIGHT = 55f              // kg
 private const val GUY_DAMPING = 0f
 
 private const val GUY_MAX_SPEED = 12f           // m/s

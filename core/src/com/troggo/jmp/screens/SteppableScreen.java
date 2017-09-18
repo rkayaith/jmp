@@ -1,7 +1,5 @@
 package com.troggo.jmp.screens;
 
-import com.troggo.jmp.utils.BatchQueue;
-
 import com.badlogic.gdx.Screen;
 
 public interface SteppableScreen extends Screen {

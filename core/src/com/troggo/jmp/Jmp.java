@@ -45,16 +45,17 @@ public class Jmp extends com.badlogic.gdx.Game {
     private static final float MAX_STEP_DELTA = 0.25f;          // s
     private static final float GAME_OVER_SUSPEND_TIME = 0.5f;   // s
     private static final float WALL_OFFSET = 0.05f;             // m
-    public  static final float FONT_CAMERA_WIDTH = 400;         // px
+    private static final float FONT_CAMERA_WIDTH = 400;         // px
     private static final Color BG_COLOR = new Color(0x001e21ff);
 
     private Box2DDebugRenderer debugRenderer;
 
+    private final Array<Body> bodies = new Array<>();
+    private final Timer worldTimer = new Timer();     // how far behind the world is from current time
+    private final Timer suspendTimer = new Timer(0, false);   // how long to suspend the game for
+
     private Preferences store;
     private World world;
-    private final Array<Body> bodies = new Array<>();
-    private Timer worldTimer = new Timer();     // how far behind the world is from current time
-    private Timer suspendTimer = new Timer(0, false);   // how long to suspend the game for
     private boolean suspendTapRequired = false;
     private Runnable suspendCb = null;
     private int highScore;
@@ -220,7 +221,7 @@ public class Jmp extends com.badlogic.gdx.Game {
         }
     }
 
-    public void suspend(float t, boolean tapRequired, Runnable func) {
+    private void suspend(float t, boolean tapRequired, Runnable func) {
         // stop world from updating for t seconds
         // renders will still occur
         if (suspendCb != null) {

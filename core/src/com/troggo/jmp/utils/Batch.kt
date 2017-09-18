@@ -13,7 +13,7 @@ fun Batch.draw(sprite: Sprite, position: Vector2, dimensions: Dimensions, flipX:
 
 fun Batch.withAlpha(alpha: Float, fn: Batch.() -> Unit) {
     val c = color
-    color = Color(c).apply { a = alpha}
+    color = Color(c).apply { a = alpha }
     fn()
     color = c
 }
